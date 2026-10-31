@@ -1,13 +1,16 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ArrowRight,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
+
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Pagination, Navigation } from "swiper/modules";
+
+import "swiper/css";
+import "swiper/css/pagination";
+import "swiper/css/navigation";
 
 const slides = [
   {
@@ -40,118 +43,126 @@ const slides = [
 ];
 
 export default function HeroSlider() {
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
-  };
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-  const prevSlide = () => {
-    setCurrentSlide(
-      (prev) => (prev - 1 + slides.length) % slides.length
+  // Show placeholder during server rendering
+  if (!isMounted) {
+    return (
+      <section className="mx-auto w-full max-w-7xl px-5 pt-4 lg:px-8">
+        <div className="h-95 w-full animate-pulse rounded-2xl bg-gray-200 sm:h-107.5 lg:h-120" />
+      </section>
     );
-  };
-
-  const slide = slides[currentSlide];
+  }
 
   return (
     <section className="mx-auto w-full max-w-7xl px-5 pt-4 lg:px-8">
-
-      {/* Hero Slider */}
-      <div
-        className="relative flex h-[380px] w-full items-center overflow-hidden rounded-2xl bg-gray-950 bg-cover bg-center sm:h-[430px] lg:h-[480px]"
-        style={{
-          backgroundImage: `url('${slide.image}')`,
+      <Swiper
+        modules={[Autoplay, Pagination, Navigation]}
+        slidesPerView={1}
+        loop={true}
+        autoplay={{
+          delay: 5000,
+          disableOnInteraction: false,
         }}
+        pagination={{
+          clickable: true,
+        }}
+        navigation={true}
+        className="hero-swiper overflow-hidden rounded-2xl"
       >
-
-        {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/20" />
-
-        {/* Slide Content */}
-        <div className="relative z-10 max-w-2xl px-6 py-12 text-white sm:px-10 lg:px-14">
-
-          {/* Category */}
-          <span className="inline-block rounded-full border border-white/30 bg-white/10 px-4 py-2 text-[11px] font-semibold tracking-[2px] backdrop-blur-sm sm:text-xs">
-            {slide.category}
-          </span>
-
-          {/* Heading */}
-          <h1 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-            {slide.title}
-          </h1>
-
-          {/* Description */}
-          <p className="mt-5 max-w-lg text-sm leading-6 text-gray-200 sm:text-base sm:leading-7">
-            {slide.description}
-          </p>
-
-          {/* CTA Buttons */}
-          <div className="mt-7 flex flex-wrap items-center gap-3">
-
-            <Link
-              href="/studios"
-              className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-700"
+        {slides.map((slide) => (
+          <SwiperSlide key={slide.id}>
+            <div
+              className="relative flex h-95 w-full items-center overflow-hidden rounded-2xl bg-gray-950 bg-cover bg-center sm:h-107.5 lg:h-120"
+              style={{
+                backgroundImage: `url('${slide.image}')`,
+              }}
             >
-              Explore Studios
-              <ArrowRight size={17} />
-            </Link>
+              {/* Dark Overlay */}
+              <div className="absolute inset-0 bg-linear-to-r from-black/85 via-black/60 to-black/20" />
 
-            <Link
-              href="/studios"
-              className="rounded-lg border border-white/70 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-gray-950"
-            >
-              Host Your Space
-            </Link>
+              {/* Slide Content */}
+              <div className="relative z-10 max-w-2xl px-6 py-12 text-white sm:px-10 lg:px-14">
+                {/* Category */}
+                <span className="inline-block rounded-full border border-white/30 bg-white/10 px-4 py-2 text-[11px] font-semibold tracking-[2px] backdrop-blur-sm sm:text-xs">
+                  {slide.category}
+                </span>
 
-          </div>
-        </div>
+                {/* Heading */}
+                <h1 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+                  {slide.title}
+                </h1>
 
-        {/* Slider Controls */}
-        <div className="absolute bottom-5 right-5 z-20 flex items-center gap-2 sm:bottom-8 sm:right-8">
+                {/* Description */}
+                <p className="mt-5 max-w-lg text-sm leading-6 text-gray-200 sm:text-base sm:leading-7">
+                  {slide.description}
+                </p>
 
-          <span className="mr-2 text-xs font-semibold text-white sm:text-sm">
-            0{currentSlide + 1} / 0{slides.length}
-          </span>
+                {/* CTA Buttons */}
+                <div className="mt-7 flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/studios"
+                    className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-700"
+                  >
+                    Explore Studios
+                    <ArrowRight size={17} />
+                  </Link>
 
-          <button
-            onClick={prevSlide}
-            aria-label="Previous slide"
-            className="rounded-full border border-white/50 bg-black/20 p-2.5 text-white transition hover:bg-white hover:text-gray-950 sm:p-3"
-          >
-            <ChevronLeft size={19} />
-          </button>
+                  <Link
+                    href="/studios"
+                    className="rounded-lg border border-white/70 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-gray-950"
+                  >
+                    Host Your Space
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </SwiperSlide>
+        ))}
+      </Swiper>
 
-          <button
-            onClick={nextSlide}
-            aria-label="Next slide"
-            className="rounded-full border border-white/50 bg-black/20 p-2.5 text-white transition hover:bg-white hover:text-gray-950 sm:p-3"
-          >
-            <ChevronRight size={19} />
-          </button>
+      {/* Swiper Custom Styling */}
+      <style jsx global>{`
+        .hero-swiper .swiper-pagination {
+          bottom: 22px !important;
+          text-align: left;
+          padding-left: 28px;
+        }
 
-        </div>
+        .hero-swiper .swiper-pagination-bullet {
+          width: 20px;
+          height: 6px;
+          border-radius: 10px;
+          background: white;
+          opacity: 0.6;
+        }
 
-        {/* Slide Indicators */}
-        <div className="absolute bottom-8 left-6 z-20 flex items-center gap-2 sm:left-10 lg:left-14">
+        .hero-swiper .swiper-pagination-bullet-active {
+          width: 40px;
+          background: #f97316;
+          opacity: 1;
+        }
 
-          {slides.map((item, index) => (
-            <button
-              key={item.id}
-              onClick={() => setCurrentSlide(index)}
-              aria-label={`Go to slide ${index + 1}`}
-              aria-current={currentSlide === index ? "true" : undefined}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                currentSlide === index
-                  ? "w-10 bg-orange-500"
-                  : "w-5 bg-white/60 hover:bg-white"
-              }`}
-            />
-          ))}
+        .hero-swiper .swiper-button-prev,
+        .hero-swiper .swiper-button-next {
+          color: white;
+          background: rgb(0 0 0 / 30%);
+          width: 42px;
+          height: 42px;
+          border: 1px solid rgb(255 255 255 / 50%);
+          border-radius: 50%;
+        }
 
-        </div>
-
-      </div>
+        .hero-swiper .swiper-button-prev::after,
+        .hero-swiper .swiper-button-next::after {
+          font-size: 16px;
+          font-weight: bold;
+        }
+      `}</style>
     </section>
   );
 }

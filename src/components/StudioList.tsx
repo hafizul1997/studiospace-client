@@ -1,4 +1,5 @@
 import React from 'react';
+import { Studio } from '@/app/Type/Studio';
 const StudioList = async() => {
       const response = await fetch(
     "http://localhost:5000/api/studios",
@@ -13,7 +14,7 @@ const StudioList = async() => {
 
     return (
         <div>
-             {studios.map((studio: any) => (
+             {studios.map((studio:Studio) => (
         <div key={studio._id}>
           <h2>{studio.title}</h2>
           <p>{studio.category}</p>
@@ -22,6 +23,6 @@ const StudioList = async() => {
       ))}
         </div>
     );
-};
+}
 
 export default StudioList;

@@ -1,5 +1,5 @@
 "use client";
-
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 const categories = [
@@ -22,8 +22,68 @@ const availableAmenities = [
 ];
 
 export default function AddStudioPage() {
+ const router = useRouter();
+const [isSubmitting, setIsSubmitting] = useState(false);
+const [message, setMessage] = useState("");
+const [messageType, setMessageType] = useState<"success" | "error">("error");
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
 
+  setIsSubmitting(true);
+  setMessage("");
+
+  const form = event.currentTarget;
+  const formData = new FormData(form);
+
+  const studioData = {
+    title: String(formData.get("title") ?? "").trim(),
+    category: String(formData.get("category") ?? ""),
+    hourlyRate: Number(formData.get("hourlyRate")),
+    securityDeposit: Number(formData.get("securityDeposit")),
+    maxCapacity: Number(formData.get("maxCapacity")),
+    location: String(formData.get("location") ?? "").trim(),
+    imageUrl: String(formData.get("imageUrl") ?? "").trim(),
+    amenities: selectedAmenities,
+    description: String(formData.get("description") ?? "").trim(),
+  };
+
+  try {
+    const response = await fetch("http://localhost:5000/api/studios", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(studioData),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Failed to create studio.");
+    }
+
+    setMessageType("success");
+    setMessage("Studio added successfully! Redirecting to My Listings...");
+
+    form.reset();
+    setSelectedAmenities([]);
+
+    setTimeout(() => {
+      router.push("/my-listings");
+    }, 1200);
+  } catch (error) {
+    setMessageType("error");
+
+    setMessage(
+      error instanceof Error
+        ? error.message
+        : "Something went wrong. Please try again."
+    );
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   const handleAmenityChange = (amenity: string) => {
     setSelectedAmenities((previous) =>
       previous.includes(amenity)
@@ -53,7 +113,7 @@ export default function AddStudioPage() {
         </div>
 
         {/* Studio Form */}
-        <form className="space-y-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
+        <form  onSubmit={handleSubmit} className="space-y-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
 
           {/* Basic Information */}
           <section>
@@ -341,25 +401,33 @@ export default function AddStudioPage() {
             </div>
 
             <p className="mt-3 text-xs text-gray-500">
-              Host details will be filled from the authenticated user's
+              Host details will be filled from the authenticated user&apos;s
               account when authentication is connected.
             </p>
           </section>
 
           {/* Submit */}
-          <div className="border-t border-gray-100 pt-6">
-            <button
-              type="button"
-              disabled
-              className="w-full cursor-not-allowed rounded-lg bg-orange-600 px-6 py-3.5 font-semibold text-white opacity-70 sm:w-auto"
-            >
-              Submit Integration Coming Next
-            </button>
+          {/* Submit Message */}
+{message && (
+  <div
+    role="status"
+    className={`rounded-lg p-4 text-sm ${
+      messageType === "success"
+        ? "bg-green-50 text-green-700"
+        : "bg-red-50 text-red-700"
+    }`}
+  >
+    {message}
+  </div>
+)}
 
-            <p className="mt-3 text-sm text-gray-500">
-              This is the UI step. Database submission will be connected next.
-            </p>
-          </div>
+<button
+  type="submit"
+  disabled={isSubmitting}
+  className="w-full rounded-lg bg-orange-600 px-6 py-3.5 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+>
+  {isSubmitting ? "Adding Studio..." : "Add Studio"}
+</button>
 
         </form>
       </div>
