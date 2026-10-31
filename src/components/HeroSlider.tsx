@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
@@ -42,22 +42,7 @@ const slides = [
   },
 ];
 
-export default function HeroSlider() {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // Show placeholder during server rendering
-  if (!isMounted) {
-    return (
-      <section className="mx-auto w-full max-w-7xl px-5 pt-4 lg:px-8">
-        <div className="h-95 w-full animate-pulse rounded-2xl bg-gray-200 sm:h-107.5 lg:h-120" />
-      </section>
-    );
-  }
-
+function HeroSliderContent() {
   return (
     <section className="mx-auto w-full max-w-7xl px-5 pt-4 lg:px-8">
       <Swiper
@@ -87,17 +72,14 @@ export default function HeroSlider() {
 
               {/* Slide Content */}
               <div className="relative z-10 max-w-2xl px-6 py-12 text-white sm:px-10 lg:px-14">
-                {/* Category */}
                 <span className="inline-block rounded-full border border-white/30 bg-white/10 px-4 py-2 text-[11px] font-semibold tracking-[2px] backdrop-blur-sm sm:text-xs">
                   {slide.category}
                 </span>
 
-                {/* Heading */}
                 <h1 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
                   {slide.title}
                 </h1>
 
-                {/* Description */}
                 <p className="mt-5 max-w-lg text-sm leading-6 text-gray-200 sm:text-base sm:leading-7">
                   {slide.description}
                 </p>
@@ -125,7 +107,7 @@ export default function HeroSlider() {
         ))}
       </Swiper>
 
-      {/* Swiper Custom Styling */}
+      {/* Swiper Styling */}
       <style jsx global>{`
         .hero-swiper .swiper-pagination {
           bottom: 22px !important;
@@ -166,3 +148,18 @@ export default function HeroSlider() {
     </section>
   );
 }
+
+// Load Swiper only in the browser
+const HeroSlider = dynamic(
+  () => Promise.resolve(HeroSliderContent),
+  {
+    ssr: false,
+    loading: () => (
+      <section className="mx-auto w-full max-w-7xl px-5 pt-4 lg:px-8">
+        <div className="h-95 w-full animate-pulse rounded-2xl bg-gray-200 sm:h-107.5 lg:h-120" />
+      </section>
+    ),
+  }
+);
+
+export default HeroSlider;
