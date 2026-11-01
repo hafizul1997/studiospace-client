@@ -46,6 +46,8 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     imageUrl: String(formData.get("imageUrl") ?? "").trim(),
     amenities: selectedAmenities,
     description: String(formData.get("description") ?? "").trim(),
+      ownerName: String(formData.get("ownerName") ?? "").trim(),
+  ownerEmail: String(formData.get("ownerEmail") ?? "").trim().toLowerCase(),
   };
 
   try {
@@ -370,14 +372,14 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
                   Host Name
                 </label>
 
-                <input
-                  id="ownerName"
-                  name="ownerName"
-                  type="text"
-                  placeholder="Available after login integration"
-                  readOnly
-                  className="w-full rounded-lg border border-gray-200 bg-gray-100 px-4 py-3 text-gray-500 outline-none"
-                />
+               <input
+  id="ownerName"
+  name="ownerName"
+  type="text"
+  placeholder="Enter your name"
+  required
+  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+/>
               </div>
 
               <div>
@@ -388,14 +390,14 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
                   Host Email
                 </label>
 
-                <input
-                  id="ownerEmail"
-                  name="ownerEmail"
-                  type="email"
-                  placeholder="Available after login integration"
-                  readOnly
-                  className="w-full rounded-lg border border-gray-200 bg-gray-100 px-4 py-3 text-gray-500 outline-none"
-                />
+               <input
+  id="ownerEmail"
+  name="ownerEmail"
+  type="email"
+  placeholder="Enter your email"
+  required
+  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+/>
               </div>
 
             </div>
