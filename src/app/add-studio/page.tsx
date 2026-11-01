@@ -391,12 +391,12 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
                 </label>
 
                <input
-  id="ownerEmail"
-  name="ownerEmail"
-  type="email"
-  placeholder="Enter your email"
-  required
-  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                 id="ownerEmail"
+                     name="ownerEmail"
+                         type="email"
+                             placeholder="Enter your email"
+                                 required
+                                     className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
 />
               </div>
 
