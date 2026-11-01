@@ -13,6 +13,8 @@ import {
   AlertCircle,
   ClipboardList,
   ArrowRight,
+  XCircle,
+  CheckCircle2,
 } from "lucide-react";
 
 interface Booking {
@@ -40,25 +42,40 @@ export default function MyBookingsPage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
+  // Safely read JSON response
+  const readJsonResponse = async (response: Response) => {
+    const text = await response.text();
+
+    try {
+      return text ? JSON.parse(text) : {};
+    } catch {
+      throw new Error(
+        "Server returned an invalid response. Please check that your backend is running."
+      );
+    }
+  };
+
+  // Fetch bookings
   const fetchBookings = async (searchEmail: string) => {
     try {
       setLoading(true);
       setError("");
+      setSuccess("");
       setSearched(true);
 
       const response = await fetch(
-        `${API_URL}/api/my-bookings?email=${encodeURIComponent(
-          searchEmail
-        )}`
+        `${API_URL}/api/my-bookings?email=${encodeURIComponent(searchEmail)}`
       );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch bookings.");
-      }
+      const data = await readJsonResponse(response);
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch bookings.");
+      }
 
       if (!Array.isArray(data)) {
         throw new Error("Invalid response received from server.");
@@ -67,8 +84,8 @@ export default function MyBookingsPage() {
       setBookings(data);
     } catch (err) {
       console.error("Fetch bookings error:", err);
-
       setBookings([]);
+
       setError(
         err instanceof Error
           ? err.message
@@ -79,6 +96,7 @@ export default function MyBookingsPage() {
     }
   };
 
+  // Search bookings
   const handleSearch = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -99,6 +117,54 @@ export default function MyBookingsPage() {
     await fetchBookings(trimmedEmail);
   };
 
+  // Cancel booking
+  const handleCancelBooking = async () => {
+    if (!selectedBooking) return;
+
+    try {
+      setCancellingId(selectedBooking._id);
+      setError("");
+      setSuccess("");
+
+      const response = await fetch(
+        `${API_URL}/api/bookings/${selectedBooking._id}/cancel`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email.trim().toLowerCase(),
+          }),
+        }
+      );
+
+      const data = await readJsonResponse(response);
+
+      if (!response.ok) {
+        throw new Error(data.message || "Could not cancel this booking.");
+      }
+
+      setSelectedBooking(null);
+      setSuccess("Your booking has been cancelled successfully.");
+
+      // Refresh booking list after cancellation
+      await fetchBookings(email.trim().toLowerCase());
+      setSuccess("Your booking has been cancelled successfully.");
+    } catch (err) {
+      console.error("Cancel booking error:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong while cancelling."
+      );
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  // Format date
   const formatDate = (date: string) => {
     return new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
       day: "numeric",
@@ -107,9 +173,11 @@ export default function MyBookingsPage() {
     });
   };
 
+  // Format time
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(":").map(Number);
     const date = new Date();
+
     date.setHours(hours, minutes, 0, 0);
 
     return date.toLocaleTimeString("en-US", {
@@ -119,6 +187,7 @@ export default function MyBookingsPage() {
     });
   };
 
+  // Status styles
   const getStatusStyle = (status: Booking["status"]) => {
     switch (status) {
       case "Confirmed":
@@ -145,7 +214,6 @@ export default function MyBookingsPage() {
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-12">
       <div className="mx-auto max-w-5xl">
-
         {/* Page Heading */}
         <div className="mb-10 text-center">
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-blue-600">
@@ -157,8 +225,8 @@ export default function MyBookingsPage() {
           </h1>
 
           <p className="mx-auto mt-3 max-w-xl text-gray-500">
-            View your studio reservations, check their status, and manage
-            your bookings.
+            View your studio reservations, check their status, and manage your
+            bookings.
           </p>
         </div>
 
@@ -175,12 +243,16 @@ export default function MyBookingsPage() {
               </h2>
 
               <p className="text-sm text-gray-500">
-                Enter the same email address you used when creating your booking.
+                Enter the same email address you used when creating your
+                booking.
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleSearch} className="flex flex-col gap-3 sm:flex-row">
+          <form
+            onSubmit={handleSearch}
+            className="flex flex-col gap-3 sm:flex-row"
+          >
             <input
               type="email"
               value={email}
@@ -213,6 +285,13 @@ export default function MyBookingsPage() {
             <div className="mt-4 flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <p>{error}</p>
+            </div>
+          )}
+
+          {success && (
+            <div className="mt-4 flex items-start gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>{success}</p>
             </div>
           )}
         </section>
@@ -357,20 +436,97 @@ export default function MyBookingsPage() {
                     </p>
                   </div>
 
-                  <Link
-                    href={`/studios/${booking.studioId}`}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-600 px-5 py-2.5 font-semibold text-blue-600 transition hover:bg-blue-50"
-                  >
-                    View Studio
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Link
+                      href={`/studios/${booking.studioId}`}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-600 px-5 py-2.5 font-semibold text-blue-600 transition hover:bg-blue-50"
+                    >
+                      View Studio
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+
+                    {booking.status === "Pending" && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedBooking(booking)}
+                        disabled={cancellingId === booking._id}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-5 py-2.5 font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Cancel Booking
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
           </section>
         )}
-
       </div>
+
+      {/* Cancel Confirmation Dialog */}
+      {selectedBooking && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          onClick={() => {
+            if (!cancellingId) setSelectedBooking(null);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cancel-title"
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+              <XCircle className="h-6 w-6 text-red-600" />
+            </div>
+
+            <h2
+              id="cancel-title"
+              className="text-xl font-bold text-gray-900"
+            >
+              Cancel this booking?
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-gray-500">
+              Are you sure you want to cancel your booking for{" "}
+              <span className="font-semibold text-gray-800">
+                {selectedBooking.studioTitle}
+              </span>
+              ? This action will change the booking status to Cancelled.
+            </p>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedBooking(null)}
+                disabled={cancellingId !== null}
+                className="rounded-lg border border-gray-300 px-5 py-2.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Keep Booking
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCancelBooking}
+                disabled={cancellingId !== null}
+                className="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {cancellingId === selectedBooking._id ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Cancelling...
+                  </>
+                ) : (
+                  "Yes, Cancel Booking"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
