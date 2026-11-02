@@ -1,6 +1,10 @@
+
 "use client";
+
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { authClient } from "@/lib/auth-client";
+import toast from "react-hot-toast";
 
 const categories = [
   "Photo Studio",
@@ -22,70 +26,23 @@ const availableAmenities = [
 ];
 
 export default function AddStudioPage() {
- const router = useRouter();
-const [isSubmitting, setIsSubmitting] = useState(false);
-const [message, setMessage] = useState("");
-const [messageType, setMessageType] = useState<"success" | "error">("error");
+  const router = useRouter();
+
+  // Authentication
+  const { data: session, isPending } = authClient.useSession();
+
+  // Form states
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
-const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-  event.preventDefault();
 
-  setIsSubmitting(true);
-  setMessage("");
-
-  const form = event.currentTarget;
-  const formData = new FormData(form);
-
-  const studioData = {
-    title: String(formData.get("title") ?? "").trim(),
-    category: String(formData.get("category") ?? ""),
-    hourlyRate: Number(formData.get("hourlyRate")),
-    securityDeposit: Number(formData.get("securityDeposit")),
-    maxCapacity: Number(formData.get("maxCapacity")),
-    location: String(formData.get("location") ?? "").trim(),
-    imageUrl: String(formData.get("imageUrl") ?? "").trim(),
-    amenities: selectedAmenities,
-    description: String(formData.get("description") ?? "").trim(),
-      ownerName: String(formData.get("ownerName") ?? "").trim(),
-  ownerEmail: String(formData.get("ownerEmail") ?? "").trim().toLowerCase(),
-  };
-
-  try {
-    const response = await fetch("http://localhost:5000/api/studios", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(studioData),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || "Failed to create studio.");
+  // Protect Add Studio page
+  useEffect(() => {
+    if (!isPending && !session?.user) {
+      router.replace("/login");
     }
+  }, [isPending, session, router]);
 
-    setMessageType("success");
-    setMessage("Studio added successfully! Redirecting to My Listings...");
-
-    form.reset();
-    setSelectedAmenities([]);
-
-    setTimeout(() => {
-      router.push("/my-listings");
-    }, 1200);
-  } catch (error) {
-    setMessageType("error");
-
-    setMessage(
-      error instanceof Error
-        ? error.message
-        : "Something went wrong. Please try again."
-    );
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  // Handle amenity selection
   const handleAmenityChange = (amenity: string) => {
     setSelectedAmenities((previous) =>
       previous.includes(amenity)
@@ -93,6 +50,91 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         : [...previous, amenity]
     );
   };
+
+  // Handle form submission
+  const handleSubmit = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    if (!session?.user) {
+      toast.error("Please login to add a studio.");
+      router.replace("/login");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    const studioData = {
+      title: String(formData.get("title") ?? "").trim(),
+      category: String(formData.get("category") ?? ""),
+      hourlyRate: Number(formData.get("hourlyRate")),
+      securityDeposit: Number(formData.get("securityDeposit")),
+      maxCapacity: Number(formData.get("maxCapacity")),
+      location: String(formData.get("location") ?? "").trim(),
+      imageUrl: String(formData.get("imageUrl") ?? "").trim(),
+      amenities: selectedAmenities,
+      description: String(formData.get("description") ?? "").trim(),
+
+      // Authenticated user information
+      ownerName: session.user.name || "",
+      ownerEmail: session.user.email.toLowerCase(),
+    };
+
+    try {
+      const response = await fetch("http://localhost:5000/api/studios", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(studioData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to create studio.");
+      }
+
+      toast.success("Studio added successfully!");
+
+      form.reset();
+      setSelectedAmenities([]);
+
+      setTimeout(() => {
+        router.push("/my-listings");
+      }, 1200);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Authentication loading
+  if (isPending) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <p className="text-gray-600">Checking authentication...</p>
+      </div>
+    );
+  }
+
+  // Redirect if user is not logged in
+  if (!session?.user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <p className="text-gray-600">Redirecting to login...</p>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
@@ -115,7 +157,10 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         </div>
 
         {/* Studio Form */}
-        <form  onSubmit={handleSubmit} className="space-y-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8"
+        >
 
           {/* Basic Information */}
           <section>
@@ -191,7 +236,6 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
                 />
               </div>
-
             </div>
           </section>
 
@@ -202,7 +246,6 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
             </h2>
 
             <div className="grid gap-5 sm:grid-cols-2">
-
               <div>
                 <label
                   htmlFor="hourlyRate"
@@ -240,7 +283,6 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
                 />
               </div>
-
             </div>
           </section>
 
@@ -363,7 +405,6 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
             </h2>
 
             <div className="grid gap-5 sm:grid-cols-2">
-
               <div>
                 <label
                   htmlFor="ownerName"
@@ -372,14 +413,13 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
                   Host Name
                 </label>
 
-               <input
-  id="ownerName"
-  name="ownerName"
-  type="text"
-  placeholder="Enter your name"
-  required
-  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
-/>
+                <input
+                  id="ownerName"
+                  type="text"
+                  value={session.user.name || ""}
+                  readOnly
+                  className="w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-3"
+                />
               </div>
 
               <div>
@@ -390,46 +430,29 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
                   Host Email
                 </label>
 
-               <input
-                 id="ownerEmail"
-                     name="ownerEmail"
-                         type="email"
-                             placeholder="Enter your email"
-                                 required
-                                     className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
-/>
+                <input
+                  id="ownerEmail"
+                  type="email"
+                  value={session.user.email}
+                  readOnly
+                  className="w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-3"
+                />
               </div>
-
             </div>
 
             <p className="mt-3 text-xs text-gray-500">
-              Host details will be filled from the authenticated user&apos;s
-              account when authentication is connected.
+              Your host information is automatically taken from your account.
             </p>
           </section>
 
-          {/* Submit */}
-          {/* Submit Message */}
-{message && (
-  <div
-    role="status"
-    className={`rounded-lg p-4 text-sm ${
-      messageType === "success"
-        ? "bg-green-50 text-green-700"
-        : "bg-red-50 text-red-700"
-    }`}
-  >
-    {message}
-  </div>
-)}
-
-<button
-  type="submit"
-  disabled={isSubmitting}
-  className="w-full rounded-lg bg-orange-600 px-6 py-3.5 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
->
-  {isSubmitting ? "Adding Studio..." : "Add Studio"}
-</button>
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full rounded-lg bg-orange-600 px-6 py-3.5 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          >
+            {isSubmitting ? "Adding Studio..." : "Add Studio"}
+          </button>
 
         </form>
       </div>

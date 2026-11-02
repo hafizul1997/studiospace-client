@@ -1,24 +1,12 @@
+
 "use client";
 
-import { createContext, useContext } from "react";
-import { authClient } from "@/lib/auth-client";
+import { ReactNode } from "react";
 
-const AuthContext = createContext<any>(null);
-
-export function AuthProvider({
+export default function AuthProvider({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-  const session = authClient.useSession();
-
-  return (
-    <AuthContext.Provider value={session}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
+  return <>{children}</>;
 }

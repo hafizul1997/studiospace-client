@@ -10,10 +10,11 @@ import { toast } from "sonner";
 export default function Navbar() {
   const router = useRouter();
 
-  // All Hooks must be called before any conditional return
   const [isOpen, setIsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const { data: session, isPending } = authClient.useSession();
+  const user = session?.user;
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -33,6 +34,8 @@ export default function Navbar() {
       }
 
       setIsOpen(false);
+      setProfileOpen(false);
+
       toast.success("Logged out successfully!");
 
       router.push("/login");
@@ -42,15 +45,19 @@ export default function Navbar() {
     }
   };
 
-  const user = session?.user;
+  const closeMenus = () => {
+    setIsOpen(false);
+    setProfileOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
+
         {/* Logo */}
         <Link
           href="/"
-          onClick={() => setIsOpen(false)}
+          onClick={closeMenus}
           className="text-2xl font-bold tracking-tight"
         >
           <span className="text-gray-950">Studio</span>
@@ -75,19 +82,55 @@ export default function Navbar() {
           {isPending ? (
             <span className="text-sm text-gray-500">Loading...</span>
           ) : user ? (
-            <>
-              <span className="max-w-36 truncate text-sm font-medium text-gray-700">
-                Hi, {user.name || user.email}
-              </span>
-
+            <div className="relative">
               <button
                 type="button"
-                onClick={handleLogout}
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-red-500 hover:text-red-600"
+                onClick={() => setProfileOpen((prev) => !prev)}
+                className="flex items-center gap-2 rounded-full border border-gray-200 px-3 py-2 transition hover:bg-gray-50"
+                aria-expanded={profileOpen}
               >
-                Logout
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 font-bold text-orange-600">
+                  {(user.name || user.email || "U")
+                    .charAt(0)
+                    .toUpperCase()}
+                </span>
+
+                <span className="max-w-32 truncate text-sm font-semibold text-gray-700">
+                  {user.name || user.email}
+                </span>
+
+                <span className="text-xs text-gray-500">▼</span>
               </button>
-            </>
+
+              {profileOpen && (
+                <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
+                  <div className="border-b border-gray-100 px-3 py-3">
+                    <p className="font-semibold text-gray-900">
+                      {user.name || "User"}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-gray-500">
+                      {user.email}
+                    </p>
+                  </div>
+
+                  <Link
+                    href="/dashboard"
+                    onClick={closeMenus}
+                    className="mt-2 block rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                  >
+                    My Dashboard
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="mt-1 w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-red-600 hover:bg-red-50"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <>
               <Link
@@ -110,7 +153,7 @@ export default function Navbar() {
         {/* Mobile Menu Button */}
         <button
           type="button"
-          onClick={() => setIsOpen((previous) => !previous)}
+          onClick={() => setIsOpen((prev) => !prev)}
           className="rounded-lg border border-gray-200 px-3 py-2 text-gray-800 lg:hidden"
           aria-label={isOpen ? "Close menu" : "Open menu"}
           aria-expanded={isOpen}
@@ -123,12 +166,13 @@ export default function Navbar() {
       {isOpen && (
         <div className="border-t border-gray-200 bg-white px-5 py-4 lg:hidden">
           <div className="flex flex-col gap-1">
+
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 href={link.href}
-                onClick={() => setIsOpen(false)}
-                className="rounded-lg px-3 py-3 text-sm font-medium text-gray-700 transition hover:bg-orange-50 hover:text-orange-600"
+                onClick={closeMenus}
+                className="rounded-lg px-3 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600"
               >
                 {link.name}
               </Link>
@@ -142,17 +186,27 @@ export default function Navbar() {
               </p>
             ) : user ? (
               <>
-                <div className="px-3 py-3 text-sm font-medium text-gray-700">
-                  Logged in as{" "}
-                  <span className="text-orange-600">
-                    {user.name || user.email}
-                  </span>
+                <div className="rounded-lg bg-orange-50 px-3 py-3">
+                  <p className="font-semibold text-gray-900">
+                    {user.name || "User"}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-600">
+                    {user.email}
+                  </p>
                 </div>
+
+                <Link
+                  href="/dashboard"
+                  onClick={closeMenus}
+                  className="rounded-lg px-3 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50"
+                >
+                  My Dashboard
+                </Link>
 
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="rounded-lg border border-gray-300 px-3 py-3 text-left text-sm font-semibold text-gray-700 transition hover:border-red-500 hover:text-red-600"
+                  className="rounded-lg border border-gray-200 px-3 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50"
                 >
                   Logout
                 </button>
@@ -161,16 +215,16 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
-                  onClick={() => setIsOpen(false)}
-                  className="rounded-lg px-3 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                  onClick={closeMenus}
+                  className="rounded-lg px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Login
                 </Link>
 
                 <Link
                   href="/register"
-                  onClick={() => setIsOpen(false)}
-                  className="rounded-lg bg-orange-600 px-3 py-3 text-center text-sm font-semibold text-white transition hover:bg-orange-700"
+                  onClick={closeMenus}
+                  className="rounded-lg bg-orange-600 px-3 py-3 text-center text-sm font-semibold text-white hover:bg-orange-700"
                 >
                   Register
                 </Link>

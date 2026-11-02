@@ -21,10 +21,9 @@ export default function LoginPage() {
 
   try {
     const result = await authClient.signIn.email({
-      email: email.trim(),
-      password,
-    });
-
+  email: email.trim().toLowerCase(),
+  password: password,
+});
     console.log("LOGIN RESULT:", result);
     console.log("LOGIN ERROR:", result.error);
 
