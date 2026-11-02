@@ -1,7 +1,7 @@
 
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -34,47 +34,49 @@ interface Booking {
   createdAt: string;
 }
 
-const API_URL = "http://localhost:5000";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+// Safely read JSON response
+const readJsonResponse = async (response: Response) => {
+  const text = await response.text();
+
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(
+      "Server returned an invalid response. Please check that your backend is running."
+    );
+  }
+};
 
 export default function MyBookingsPage() {
-  const [email, setEmail] = useState("");
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
-  // Safely read JSON response
-  const readJsonResponse = async (response: Response) => {
-    const text = await response.text();
-
-    try {
-      return text ? JSON.parse(text) : {};
-    } catch {
-      throw new Error(
-        "Server returned an invalid response. Please check that your backend is running."
-      );
-    }
-  };
-
-  // Fetch bookings
-  const fetchBookings = async (searchEmail: string) => {
+  // Fetch bookings using authenticated session
+  const fetchBookings = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
       setSuccess("");
-      setSearched(true);
 
-      const response = await fetch(
-        `${API_URL}/api/my-bookings?email=${encodeURIComponent(searchEmail)}`
-      );
+      const response = await fetch(`${API_URL}/api/my-bookings`, {
+        method: "GET",
+        credentials: "include",
+      });
 
       const data = await readJsonResponse(response);
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch bookings.");
+        throw new Error(
+          data.message || "Failed to fetch bookings."
+        );
       }
 
       if (!Array.isArray(data)) {
@@ -82,9 +84,12 @@ export default function MyBookingsPage() {
       }
 
       setBookings(data);
+      setSearched(true);
     } catch (err) {
       console.error("Fetch bookings error:", err);
+
       setBookings([]);
+      setSearched(true);
 
       setError(
         err instanceof Error
@@ -94,30 +99,18 @@ export default function MyBookingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Search bookings
-  const handleSearch = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // Automatically load bookings when page opens
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void fetchBookings();
+    }, 0);
 
-    const trimmedEmail = email.trim().toLowerCase();
+    return () => clearTimeout(timer);
+  }, [fetchBookings]);
 
-    if (!trimmedEmail) {
-      setError("Please enter your booking email address.");
-      return;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-
-    localStorage.setItem("studiospace_booking_email", trimmedEmail);
-
-    await fetchBookings(trimmedEmail);
-  };
-
-  // Cancel booking
+  // Cancel booking using authenticated session
   const handleCancelBooking = async () => {
     if (!selectedBooking) return;
 
@@ -130,26 +123,22 @@ export default function MyBookingsPage() {
         `${API_URL}/api/bookings/${selectedBooking._id}/cancel`,
         {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: email.trim().toLowerCase(),
-          }),
+          credentials: "include",
         }
       );
 
       const data = await readJsonResponse(response);
 
       if (!response.ok) {
-        throw new Error(data.message || "Could not cancel this booking.");
+        throw new Error(
+          data.message || "Could not cancel this booking."
+        );
       }
 
       setSelectedBooking(null);
-      setSuccess("Your booking has been cancelled successfully.");
 
-      // Refresh booking list after cancellation
-      await fetchBookings(email.trim().toLowerCase());
+      await fetchBookings();
+
       setSuccess("Your booking has been cancelled successfully.");
     } catch (err) {
       console.error("Cancel booking error:", err);
@@ -192,12 +181,16 @@ export default function MyBookingsPage() {
     switch (status) {
       case "Confirmed":
         return "bg-green-100 text-green-700";
+
       case "Pending":
         return "bg-yellow-100 text-yellow-700";
+
       case "Completed":
         return "bg-blue-100 text-blue-700";
+
       case "Cancelled":
         return "bg-red-100 text-red-700";
+
       default:
         return "bg-gray-100 text-gray-700";
     }
@@ -214,6 +207,7 @@ export default function MyBookingsPage() {
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-12">
       <div className="mx-auto max-w-5xl">
+
         {/* Page Heading */}
         <div className="mb-10 text-center">
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-blue-600">
@@ -230,56 +224,38 @@ export default function MyBookingsPage() {
           </p>
         </div>
 
-        {/* Search Section */}
+        {/* Booking Information */}
         <section className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="rounded-xl bg-blue-50 p-3">
-              <Search className="h-5 w-5 text-blue-600" />
-            </div>
-
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
-                Find Your Bookings
+                Your Reservations
               </h2>
 
-              <p className="text-sm text-gray-500">
-                Enter the same email address you used when creating your
-                booking.
+              <p className="mt-1 text-sm text-gray-500">
+                Your bookings are connected to your logged-in account.
               </p>
             </div>
-          </div>
-
-          <form
-            onSubmit={handleSearch}
-            className="flex flex-col gap-3 sm:flex-row"
-          >
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your booking email"
-              className="min-h-12 flex-1 rounded-lg border border-gray-300 px-4 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              required
-            />
 
             <button
-              type="submit"
+              type="button"
+              onClick={() => void fetchBookings()}
               disabled={loading}
               className="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Searching...
+                  Loading...
                 </>
               ) : (
                 <>
                   <Search className="h-4 w-4" />
-                  Find Bookings
+                  Refresh Bookings
                 </>
               )}
             </button>
-          </form>
+          </div>
 
           {error && (
             <div className="mt-4 flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">
@@ -326,7 +302,9 @@ export default function MyBookingsPage() {
         {loading && (
           <div className="flex flex-col items-center justify-center rounded-xl border bg-white py-16">
             <Loader2 className="mb-3 h-8 w-8 animate-spin text-blue-600" />
-            <p className="text-gray-500">Finding your reservations...</p>
+            <p className="text-gray-500">
+              Finding your reservations...
+            </p>
           </div>
         )}
 
@@ -340,7 +318,7 @@ export default function MyBookingsPage() {
             </h3>
 
             <p className="mt-2 text-gray-500">
-              We could not find any reservations for this email address.
+              You do not have any studio reservations yet.
             </p>
 
             <Link
@@ -389,7 +367,9 @@ export default function MyBookingsPage() {
                   <div className="flex items-center gap-3">
                     <CalendarDays className="h-5 w-5 text-blue-600" />
                     <div>
-                      <p className="text-xs text-gray-500">Booking Date</p>
+                      <p className="text-xs text-gray-500">
+                        Booking Date
+                      </p>
                       <p className="text-sm font-medium text-gray-800">
                         {formatDate(booking.bookingDate)}
                       </p>
@@ -399,7 +379,9 @@ export default function MyBookingsPage() {
                   <div className="flex items-center gap-3">
                     <Clock className="h-5 w-5 text-blue-600" />
                     <div>
-                      <p className="text-xs text-gray-500">Booking Time</p>
+                      <p className="text-xs text-gray-500">
+                        Booking Time
+                      </p>
                       <p className="text-sm font-medium text-gray-800">
                         {formatTime(booking.startTime)} -{" "}
                         {formatTime(booking.endTime)}
@@ -410,7 +392,9 @@ export default function MyBookingsPage() {
                   <div className="flex items-center gap-3">
                     <Users className="h-5 w-5 text-blue-600" />
                     <div>
-                      <p className="text-xs text-gray-500">Guests</p>
+                      <p className="text-xs text-gray-500">
+                        Guests
+                      </p>
                       <p className="text-sm font-medium text-gray-800">
                         {booking.guests} People
                       </p>
@@ -420,7 +404,9 @@ export default function MyBookingsPage() {
                   <div className="flex items-center gap-3">
                     <MapPin className="h-5 w-5 text-blue-600" />
                     <div>
-                      <p className="text-xs text-gray-500">Duration</p>
+                      <p className="text-xs text-gray-500">
+                        Duration
+                      </p>
                       <p className="text-sm font-medium text-gray-800">
                         {booking.totalHours} Hours
                       </p>
@@ -430,7 +416,9 @@ export default function MyBookingsPage() {
 
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                   <div>
-                    <p className="text-sm text-gray-500">Total Price</p>
+                    <p className="text-sm text-gray-500">
+                      Total Price
+                    </p>
                     <p className="text-2xl font-bold text-gray-900">
                       AED {booking.totalPrice}
                     </p>
