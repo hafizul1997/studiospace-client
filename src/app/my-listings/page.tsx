@@ -1,8 +1,16 @@
+
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  Search,
+  Loader2,
+  AlertCircle,
+  PlusCircle,
+} from "lucide-react";
+
 interface Studio {
   _id: string;
   title: string;
@@ -15,109 +23,167 @@ interface Studio {
   ownerEmail: string;
 }
 
-const API_URL = "http://localhost:5000";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+// Safely read JSON response
+const readJsonResponse = async (response: Response) => {
+  const text = await response.text();
+
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(
+      "Server returned an invalid response. Please check that your backend is running."
+    );
+  }
+};
 
 export default function MyListingsPage() {
-  const [email, setEmail] = useState("");
   const [studios, setStudios] = useState<Studio[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [searched, setSearched] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (!email.trim()) {
-      setError("Please enter your email address.");
-      return;
-    }
-
+  // Fetch listings using authenticated session
+  const fetchMyListings = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
-      setSearched(true);
 
-      const response = await fetch(
-        `${API_URL}/api/my-listings?email=${encodeURIComponent(
-          email.trim().toLowerCase()
-        )}`
-      );
+      const response = await fetch(`${API_URL}/api/my-listings`, {
+        method: "GET",
+        credentials: "include",
+      });
 
-      const data = await response.json();
+      const data = await readJsonResponse(response);
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to load your listings.");
+        throw new Error(
+          data.message || "Failed to load your listings."
+        );
+      }
+
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid response received from server.");
       }
 
       setStudios(data);
+      setSearched(true);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Something went wrong."
-      );
+      console.error("Fetch my listings error:", err);
+
       setStudios([]);
+      setSearched(true);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again."
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Automatically load listings when page opens
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void fetchMyListings();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [fetchMyListings]);
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-12">
       <div className="mx-auto max-w-6xl">
+
         {/* Page Heading */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            My Listings
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Manage and view the studios you have added.
-          </p>
+        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              My Listings
+            </h1>
+
+            <p className="mt-2 text-gray-600">
+              Manage and view the studios you have added.
+            </p>
+          </div>
+
+          <Link
+            href="/add-studio"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-6 py-3 font-semibold text-white transition hover:bg-orange-600"
+          >
+            <PlusCircle className="h-5 w-5" />
+            Add New Studio
+          </Link>
         </div>
 
-        {/* Email Search */}
-        <form
-          onSubmit={handleSearch}
-          className="mb-10 flex flex-col gap-3 rounded-xl border bg-white p-5 shadow-sm sm:flex-row"
-        >
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your owner email"
-            required
-            className="flex-1 rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
-          />
+        {/* Listing Information and Refresh */}
+        <section className="mb-8 flex flex-col justify-between gap-4 rounded-xl border bg-white p-5 shadow-sm sm:flex-row sm:items-center">
+          <div>
+            <h2 className="font-semibold text-gray-900">
+              Your Studio Listings
+            </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              These listings are connected to your logged-in account.
+            </p>
+          </div>
 
           <button
-            type="submit"
+            type="button"
+            onClick={() => void fetchMyListings()}
             disabled={loading}
-            className="rounded-lg bg-orange-500 px-7 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-gray-900 px-6 py-3 font-semibold text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? "Loading..." : "Find My Listings"}
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <Search className="h-4 w-4" />
+                Refresh Listings
+              </>
+            )}
           </button>
-        </form>
+        </section>
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-600">
-            {error}
+          <div className="mb-6 flex items-start gap-3 rounded-lg bg-red-50 p-4 text-red-600">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            <p className="text-sm">{error}</p>
           </div>
         )}
 
         {/* Loading */}
         {loading && (
-          <div className="py-12 text-center text-gray-600">
-            Loading your studios...
+          <div className="flex flex-col items-center justify-center rounded-xl border bg-white py-16">
+            <Loader2 className="mb-3 h-8 w-8 animate-spin text-orange-500" />
+
+            <p className="text-gray-600">
+              Loading your studios...
+            </p>
           </div>
         )}
 
         {/* Empty State */}
         {!loading && searched && !error && studios.length === 0 && (
-          <div className="rounded-xl border bg-white py-16 text-center">
+          <div className="rounded-xl border bg-white px-6 py-16 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-orange-100">
+              <PlusCircle className="h-7 w-7 text-orange-500" />
+            </div>
+
             <h2 className="text-xl font-semibold text-gray-800">
               No Listings Found
             </h2>
+
             <p className="mt-2 text-gray-500">
-              We couldn&apos;t find any studios associated with this email.
+              You have not added any studios yet.
             </p>
 
             <Link
@@ -130,7 +196,7 @@ export default function MyListingsPage() {
         )}
 
         {/* Studio Cards */}
-        {!loading && studios.length > 0 && (
+        {!loading && !error && studios.length > 0 && (
           <>
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900">
@@ -148,16 +214,18 @@ export default function MyListingsPage() {
                   key={studio._id}
                   className="overflow-hidden rounded-xl border bg-white shadow-sm transition hover:shadow-md"
                 >
-                 <div className="relative h-52 w-full">
-  <Image
-    src={studio.imageUrl}
-    alt={studio.title}
-    fill
-    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-    className="object-cover"
-  />
-</div>
+                  {/* Studio Image */}
+                  <div className="relative h-52 w-full">
+                    <Image
+                      src={studio.imageUrl}
+                      alt={studio.title}
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover"
+                    />
+                  </div>
 
+                  {/* Studio Information */}
                   <div className="p-5">
                     <span className="text-sm font-medium text-orange-500">
                       {studio.category}
@@ -175,7 +243,7 @@ export default function MyListingsPage() {
                       {studio.description}
                     </p>
 
-                    <div className="mt-4 flex items-center justify-between">
+                    <div className="mt-4 flex items-center justify-between gap-3">
                       <p className="font-bold text-gray-900">
                         AED {studio.hourlyRate}
                         <span className="text-sm font-normal text-gray-500">
@@ -186,7 +254,7 @@ export default function MyListingsPage() {
 
                       <Link
                         href={`/studios/${studio._id}`}
-                        className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
+                        className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700"
                       >
                         View Studio
                       </Link>
@@ -198,14 +266,6 @@ export default function MyListingsPage() {
           </>
         )}
 
-        {/* Initial Message */}
-        {!searched && (
-          <div className="rounded-xl border bg-white py-12 text-center">
-            <p className="text-gray-500">
-              Enter the email address you used when adding your studio.
-            </p>
-          </div>
-        )}
       </div>
     </main>
   );

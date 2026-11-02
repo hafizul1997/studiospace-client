@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 import Image from "next/image";
@@ -15,6 +14,9 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type Studio = {
   _id: string;
@@ -65,58 +67,87 @@ const categories = [
 export default function MyListingsPage() {
   const { data: session, isPending } = authClient.useSession();
 
+  const userEmail = session?.user?.email;
+
   const [studios, setStudios] = useState<Studio[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
 
   const [editingStudio, setEditingStudio] = useState<Studio | null>(null);
   const [editForm, setEditForm] = useState<EditForm>(initialForm);
+
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Fetch owner's studios
-  useEffect(() => {
-    if (isPending || !session?.user?.email) return;
+  const fetchMyListings = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!userEmail) return;
 
-    let ignore = false;
-
-    const fetchMyListings = async () => {
       try {
-        const email = encodeURIComponent(session.user.email);
+        setLoadError("");
 
-        const response = await fetch(
-          `http://localhost:5000/api/my-listings?email=${email}`
-        );
+        const response = await fetch(`${API_URL}/api/my-listings`, {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+          signal,
+        });
+
+        const result = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-          throw new Error("Failed to fetch listings");
+          throw new Error(
+            result.message ||
+              `Failed to fetch listings. Status: ${response.status}`
+          );
         }
 
-        const data: Studio[] = await response.json();
-
-        if (!ignore) {
-          setStudios(data);
+        if (!Array.isArray(result)) {
+          throw new Error("Invalid listing data received from server.");
         }
+
+        setStudios(result);
       } catch (error) {
-        console.error(error);
-
-        if (!ignore) {
-          toast.error("Could not load your listings");
+        if (error instanceof Error && error.name === "AbortError") {
+          return;
         }
+
+        console.error("Fetch listings error:", error);
+
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Could not load your listings";
+
+        setLoadError(message);
+        toast.error(message);
       } finally {
-        if (!ignore) {
+        if (!signal?.aborted) {
           setLoading(false);
         }
       }
-    };
+    },
+    [userEmail]
+  );
 
-    fetchMyListings();
+  useEffect(() => {
+    if (isPending || !userEmail) return;
+
+    const controller = new AbortController();
+
+    const timer = setTimeout(() => {
+      fetchMyListings(controller.signal);
+    }, 0);
 
     return () => {
-      ignore = true;
+      clearTimeout(timer);
+      controller.abort();
     };
-  }, [session, isPending]);
+  }, [isPending, userEmail, fetchMyListings]);
 
   // Search and category filter
   const filteredStudios = useMemo(() => {
@@ -169,7 +200,10 @@ export default function MyListingsPage() {
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!editingStudio || !session?.user?.email) return;
+    if (!editingStudio || !userEmail) {
+      toast.error("Please log in first.");
+      return;
+    }
 
     const hourlyRate = Number(editForm.hourlyRate);
     const securityDeposit = Number(editForm.securityDeposit);
@@ -185,7 +219,7 @@ export default function MyListingsPage() {
       !Number.isInteger(maxCapacity) ||
       maxCapacity < 1
     ) {
-      toast.error("Please enter valid studio information");
+      toast.error("Please enter valid studio information.");
       return;
     }
 
@@ -193,26 +227,31 @@ export default function MyListingsPage() {
       setSaving(true);
 
       const response = await fetch(
-        `http://localhost:5000/api/studios/${editingStudio._id}`,
+        `${API_URL}/api/studios/${editingStudio._id}`,
         {
           method: "PATCH",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
             ...editForm,
+            title: editForm.title.trim(),
+            location: editForm.location.trim(),
             hourlyRate,
             securityDeposit,
             maxCapacity,
-            ownerEmail: session.user.email.toLowerCase(),
           }),
         }
       );
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(result.message || "Failed to update studio");
+        throw new Error(
+          result.message ||
+            `Failed to update studio. Status: ${response.status}`
+        );
       }
 
       // Update UI without refreshing
@@ -222,6 +261,8 @@ export default function MyListingsPage() {
             ? {
                 ...studio,
                 ...editForm,
+                title: editForm.title.trim(),
+                location: editForm.location.trim(),
                 hourlyRate,
                 securityDeposit,
                 maxCapacity,
@@ -233,7 +274,7 @@ export default function MyListingsPage() {
       toast.success("Studio updated successfully!");
       setEditingStudio(null);
     } catch (error) {
-      console.error(error);
+      console.error("Update studio error:", error);
 
       toast.error(
         error instanceof Error ? error.message : "Update failed"
@@ -249,28 +290,26 @@ export default function MyListingsPage() {
       `Are you sure you want to delete "${studio.title}"?`
     );
 
-    if (!confirmed || !session?.user?.email) return;
+    if (!confirmed || !userEmail) return;
 
     try {
       setDeletingId(studio._id);
 
       const response = await fetch(
-        `http://localhost:5000/api/studios/${studio._id}`,
+        `${API_URL}/api/studios/${studio._id}`,
         {
           method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ownerEmail: session.user.email.toLowerCase(),
-          }),
+          credentials: "include",
         }
       );
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(result.message || "Failed to delete studio");
+        throw new Error(
+          result.message ||
+            `Failed to delete studio. Status: ${response.status}`
+        );
       }
 
       setStudios((previous) =>
@@ -279,7 +318,7 @@ export default function MyListingsPage() {
 
       toast.success("Studio deleted successfully!");
     } catch (error) {
-      console.error(error);
+      console.error("Delete studio error:", error);
 
       toast.error(
         error instanceof Error ? error.message : "Delete failed"
@@ -314,6 +353,25 @@ export default function MyListingsPage() {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         Loading your listings...
+      </div>
+    );
+  }
+
+  // Fetch error
+  if (loadError && studios.length === 0) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-red-600">{loadError}</p>
+
+        <button
+          onClick={() => {
+            setLoading(true);
+            fetchMyListings();
+          }}
+          className="rounded-lg bg-black px-5 py-2.5 text-white hover:bg-gray-800"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
@@ -361,6 +419,7 @@ export default function MyListingsPage() {
           className="rounded-lg border border-gray-300 bg-white px-4 py-3 outline-none focus:border-black"
         >
           <option value="All">All Categories</option>
+
           {categories.map((item) => (
             <option key={item} value={item}>
               {item}
@@ -427,6 +486,7 @@ export default function MyListingsPage() {
                     <h2 className="font-semibold text-gray-900">
                       {studio.title}
                     </h2>
+
                     <p className="mt-1 text-sm text-gray-500">
                       {studio.category}
                     </p>
@@ -494,6 +554,7 @@ export default function MyListingsPage() {
                 <h2 className="text-xl font-bold text-gray-900">
                   Edit Studio
                 </h2>
+
                 <p className="mt-1 text-sm text-gray-500">
                   Update your studio information.
                 </p>
@@ -502,7 +563,8 @@ export default function MyListingsPage() {
               <button
                 type="button"
                 onClick={() => setEditingStudio(null)}
-                className="rounded-full p-2 text-gray-500 hover:bg-gray-100"
+                disabled={saving}
+                className="rounded-full p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
                 aria-label="Close edit form"
               >
                 <X size={20} />
@@ -514,6 +576,7 @@ export default function MyListingsPage() {
                 <label className="mb-1 block text-sm font-medium">
                   Studio Title
                 </label>
+
                 <input
                   name="title"
                   value={editForm.title}
@@ -527,6 +590,7 @@ export default function MyListingsPage() {
                 <label className="mb-1 block text-sm font-medium">
                   Category
                 </label>
+
                 <select
                   name="category"
                   value={editForm.category}
@@ -546,6 +610,7 @@ export default function MyListingsPage() {
                   <label className="mb-1 block text-sm font-medium">
                     Hourly Rate (AED)
                   </label>
+
                   <input
                     type="number"
                     name="hourlyRate"
@@ -562,6 +627,7 @@ export default function MyListingsPage() {
                   <label className="mb-1 block text-sm font-medium">
                     Security Deposit
                   </label>
+
                   <input
                     type="number"
                     name="securityDeposit"
@@ -578,6 +644,7 @@ export default function MyListingsPage() {
                   <label className="mb-1 block text-sm font-medium">
                     Max Capacity
                   </label>
+
                   <input
                     type="number"
                     name="maxCapacity"
@@ -595,6 +662,7 @@ export default function MyListingsPage() {
                 <label className="mb-1 block text-sm font-medium">
                   Location
                 </label>
+
                 <input
                   name="location"
                   value={editForm.location}
@@ -608,6 +676,7 @@ export default function MyListingsPage() {
                 <label className="mb-1 block text-sm font-medium">
                   Image URL
                 </label>
+
                 <input
                   type="url"
                   name="imageUrl"
@@ -621,6 +690,7 @@ export default function MyListingsPage() {
                 <label className="mb-1 block text-sm font-medium">
                   Description
                 </label>
+
                 <textarea
                   name="description"
                   value={editForm.description}
@@ -635,7 +705,7 @@ export default function MyListingsPage() {
                   type="button"
                   onClick={() => setEditingStudio(null)}
                   disabled={saving}
-                  className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50"
+                  className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>

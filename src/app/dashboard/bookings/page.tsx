@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 import {
@@ -11,6 +11,7 @@ import {
   Users,
   MapPin,
   XCircle,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,6 +32,9 @@ type Booking = {
   createdAt: string;
 };
 
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 export default function MyBookingsPage() {
   const { data: session, isPending } = authClient.useSession();
 
@@ -38,46 +42,71 @@ export default function MyBookingsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  const userEmail = session?.user?.email?.toLowerCase() || "";
 
   // Fetch current user's bookings
-  useEffect(() => {
-    if (isPending || !session?.user?.email) return;
+  const fetchMyBookings = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!userEmail) return;
 
-    let ignore = false;
-
-    const fetchMyBookings = async () => {
       try {
-        const email = encodeURIComponent(session.user.email);
+        setError("");
 
         const response = await fetch(
-          `http://localhost:5000/api/my-bookings?email=${email}`
+          `${API_URL}/api/my-bookings`,
+          {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+            signal,
+          }
         );
 
+        const result = await response.json().catch(() => ({}));
+
         if (!response.ok) {
-          throw new Error("Failed to fetch bookings");
+          throw new Error(
+            result.message ||
+              `Failed to fetch bookings. Status: ${response.status}`
+          );
         }
 
-        const data: Booking[] = await response.json();
-
-        if (!ignore) {
-          setBookings(data);
+        if (!Array.isArray(result)) {
+          throw new Error("Invalid booking data received from server.");
         }
+
+        setBookings(result);
       } catch (error) {
-        console.error("My bookings error:", error);
-
-        if (!ignore) {
-          setBookings([]);
+        if (
+          error instanceof Error &&
+          error.name !== "AbortError"
+        ) {
+          console.error("My bookings error:", error);
+          setError(error.message);
           toast.error("Could not load your bookings");
         }
       }
-    };
+    },
+    [userEmail]
+  );
 
-    fetchMyBookings();
+  // Load bookings when session is ready
+  useEffect(() => {
+    if (isPending || !userEmail) return;
+
+    const controller = new AbortController();
+
+    const initialTimer = setTimeout(() => {
+      fetchMyBookings(controller.signal);
+    }, 0);
 
     return () => {
-      ignore = true;
+      clearTimeout(initialTimer);
+      controller.abort();
     };
-  }, [session, isPending]);
+  }, [isPending, userEmail, fetchMyBookings]);
 
   // Search and status filter
   const filteredBookings = useMemo(() => {
@@ -98,7 +127,7 @@ export default function MyBookingsPage() {
 
   // Cancel booking
   const handleCancelBooking = async (booking: Booking) => {
-    if (!session?.user?.email) return;
+    if (!userEmail || cancellingId) return;
 
     if (booking.status !== "Pending") {
       toast.error("Only pending bookings can be cancelled");
@@ -115,22 +144,22 @@ export default function MyBookingsPage() {
       setCancellingId(booking._id);
 
       const response = await fetch(
-        `http://localhost:5000/api/bookings/${booking._id}/cancel`,
+        `${API_URL}/api/bookings/${booking._id}/cancel`,
         {
           method: "PATCH",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            email: session.user.email.toLowerCase(),
-          }),
         }
       );
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(result.message || "Failed to cancel booking");
+        throw new Error(
+          result.message || "Failed to cancel booking"
+        );
       }
 
       // Update UI without refreshing
@@ -147,7 +176,9 @@ export default function MyBookingsPage() {
       console.error("Cancel booking error:", error);
 
       toast.error(
-        error instanceof Error ? error.message : "Cancellation failed"
+        error instanceof Error
+          ? error.message
+          : "Cancellation failed"
       );
     } finally {
       setCancellingId(null);
@@ -158,7 +189,7 @@ export default function MyBookingsPage() {
   if (isPending) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        Checking your account...
+        <Loader2 className="animate-spin text-gray-500" size={30} />
       </div>
     );
   }
@@ -168,6 +199,7 @@ export default function MyBookingsPage() {
     return (
       <div className="p-8 text-center">
         <h2 className="text-xl font-semibold">Please log in</h2>
+
         <Link href="/login" className="mt-3 inline-block text-blue-600">
           Go to Login
         </Link>
@@ -176,13 +208,35 @@ export default function MyBookingsPage() {
   }
 
   // Bookings loading
-  if (bookings === null) {
+  if (bookings === null && !error) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        Loading your bookings...
+        <Loader2 className="animate-spin text-gray-500" size={30} />
       </div>
     );
   }
+
+  // API Error
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">
+        <h2 className="font-semibold">
+          Unable to Load Your Bookings
+        </h2>
+
+        <p className="mt-2 text-sm">{error}</p>
+
+        <button
+          onClick={() => fetchMyBookings()}
+          className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  const currentBookings = bookings ?? [];
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -197,12 +251,12 @@ export default function MyBookingsPage() {
 
   return (
     <div className="space-y-6 p-4 md:p-8">
-
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
           My Bookings
         </h1>
+
         <p className="mt-1 text-sm text-gray-500">
           View and manage your studio booking requests.
         </p>
@@ -212,22 +266,25 @@ export default function MyBookingsPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border bg-white p-5">
           <p className="text-sm text-gray-500">Total Bookings</p>
+
           <h2 className="mt-2 text-2xl font-bold">
-            {bookings.length}
+            {currentBookings.length}
           </h2>
         </div>
 
         <div className="rounded-xl border bg-white p-5">
           <p className="text-sm text-gray-500">Pending</p>
+
           <h2 className="mt-2 text-2xl font-bold text-yellow-600">
-            {bookings.filter((b) => b.status === "Pending").length}
+            {currentBookings.filter((b) => b.status === "Pending").length}
           </h2>
         </div>
 
         <div className="rounded-xl border bg-white p-5">
           <p className="text-sm text-gray-500">Confirmed</p>
+
           <h2 className="mt-2 text-2xl font-bold text-green-600">
-            {bookings.filter((b) => b.status === "Confirmed").length}
+            {currentBookings.filter((b) => b.status === "Confirmed").length}
           </h2>
         </div>
       </div>
@@ -262,7 +319,7 @@ export default function MyBookingsPage() {
       </div>
 
       <p className="text-sm text-gray-500">
-        Showing {filteredBookings.length} of {bookings.length} bookings
+        Showing {filteredBookings.length} of {currentBookings.length} bookings
       </p>
 
       {/* Booking List */}
@@ -274,18 +331,18 @@ export default function MyBookingsPage() {
           />
 
           <h2 className="mt-4 text-lg font-semibold text-gray-800">
-            {bookings.length === 0
+            {currentBookings.length === 0
               ? "You haven't made any bookings yet."
               : "No matching bookings found."}
           </h2>
 
           <p className="mt-2 text-sm text-gray-500">
-            {bookings.length === 0
+            {currentBookings.length === 0
               ? "Explore studios and make your first booking."
               : "Try another search or status filter."}
           </p>
 
-          {bookings.length === 0 && (
+          {currentBookings.length === 0 && (
             <Link
               href="/studios"
               className="mt-5 inline-block rounded-lg bg-black px-5 py-2.5 text-white"
@@ -326,8 +383,10 @@ export default function MyBookingsPage() {
               <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="flex items-center gap-3">
                   <CalendarDays size={19} className="text-gray-400" />
+
                   <div>
                     <p className="text-xs text-gray-500">Booking Date</p>
+
                     <p className="text-sm font-medium">
                       {booking.bookingDate}
                     </p>
@@ -336,8 +395,10 @@ export default function MyBookingsPage() {
 
                 <div className="flex items-center gap-3">
                   <Clock size={19} className="text-gray-400" />
+
                   <div>
                     <p className="text-xs text-gray-500">Time</p>
+
                     <p className="text-sm font-medium">
                       {booking.startTime} - {booking.endTime}
                     </p>
@@ -346,8 +407,10 @@ export default function MyBookingsPage() {
 
                 <div className="flex items-center gap-3">
                   <Users size={19} className="text-gray-400" />
+
                   <div>
                     <p className="text-xs text-gray-500">Guests</p>
+
                     <p className="text-sm font-medium">
                       {booking.guests} people
                     </p>
@@ -356,8 +419,10 @@ export default function MyBookingsPage() {
 
                 <div className="flex items-center gap-3">
                   <MapPin size={19} className="text-gray-400" />
+
                   <div>
                     <p className="text-xs text-gray-500">Duration</p>
+
                     <p className="text-sm font-medium">
                       {booking.totalHours} hours
                     </p>
@@ -371,6 +436,7 @@ export default function MyBookingsPage() {
                   <p className="text-xs text-gray-500">
                     Total Booking Price
                   </p>
+
                   <p className="text-xl font-bold text-gray-900">
                     AED {Number(booking.totalPrice).toFixed(2)}
                   </p>
@@ -390,7 +456,12 @@ export default function MyBookingsPage() {
                       disabled={cancellingId === booking._id}
                       className="flex items-center gap-2 rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <XCircle size={16} />
+                      {cancellingId === booking._id ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <XCircle size={16} />
+                      )}
+
                       {cancellingId === booking._id
                         ? "Cancelling..."
                         : "Cancel Booking"}

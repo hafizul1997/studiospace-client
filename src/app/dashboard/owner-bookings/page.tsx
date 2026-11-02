@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import {
   CalendarDays,
@@ -29,7 +29,8 @@ type Booking = {
   status: "Pending" | "Confirmed" | "Rejected" | "Cancelled";
 };
 
-const API_URL = "http://localhost:5000";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function OwnerBookingsPage() {
   const { data: session, isPending } = authClient.useSession();
@@ -42,30 +43,30 @@ export default function OwnerBookingsPage() {
   const ownerEmail = session?.user?.email?.toLowerCase() || "";
 
   // Fetch Owner Bookings
-  useEffect(() => {
-    if (isPending || !ownerEmail) return;
+  const fetchOwnerBookings = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!ownerEmail) return;
 
-    const controller = new AbortController();
-
-    async function fetchOwnerBookings() {
       try {
         setLoading(true);
         setError("");
 
         const response = await fetch(
-          `${API_URL}/api/owner-bookings?email=${encodeURIComponent(
-            ownerEmail
-          )}`,
+          `${API_URL}/api/owner-bookings`,
           {
-            signal: controller.signal,
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+            signal,
           }
         );
 
-        const result = await response.json();
+        const result = await response.json().catch(() => ({}));
 
         if (!response.ok) {
           throw new Error(
-            result.message || "Failed to load booking requests."
+            result.message ||
+              `Failed to load booking requests. Status: ${response.status}`
           );
         }
 
@@ -75,20 +76,37 @@ export default function OwnerBookingsPage() {
 
         setBookings(result);
       } catch (err) {
-        if (err instanceof Error && err.name !== "AbortError") {
+        if (
+          err instanceof Error &&
+          err.name !== "AbortError"
+        ) {
+          console.error("Owner bookings fetch error:", err);
           setError(err.message);
         }
       } finally {
-        if (!controller.signal.aborted) {
+        if (!signal?.aborted) {
           setLoading(false);
         }
       }
-    }
+    },
+    [ownerEmail]
+  );
 
-    fetchOwnerBookings();
+  // Load Owner Bookings
+  useEffect(() => {
+    if (isPending || !ownerEmail) return;
 
-    return () => controller.abort();
-  }, [ownerEmail, isPending]);
+    const controller = new AbortController();
+
+    const initialTimer = setTimeout(() => {
+      fetchOwnerBookings(controller.signal);
+    }, 0);
+
+    return () => {
+      clearTimeout(initialTimer);
+      controller.abort();
+    };
+  }, [ownerEmail, isPending, fetchOwnerBookings]);
 
   // Confirm or Reject Booking
   const handleBookingStatus = async (
@@ -112,17 +130,15 @@ export default function OwnerBookingsPage() {
         `${API_URL}/api/bookings/${bookingId}/status`,
         {
           method: "PATCH",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            ownerEmail,
-            status,
-          }),
+          body: JSON.stringify({ status }),
         }
       );
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         throw new Error(
@@ -130,6 +146,7 @@ export default function OwnerBookingsPage() {
         );
       }
 
+      // Update booking status in the UI
       setBookings((previousBookings) =>
         previousBookings.map((booking) =>
           booking._id === bookingId
@@ -138,6 +155,8 @@ export default function OwnerBookingsPage() {
         )
       );
     } catch (err) {
+      console.error("Booking status update error:", err);
+
       alert(
         err instanceof Error
           ? err.message
@@ -198,8 +217,8 @@ export default function OwnerBookingsPage() {
         <p className="mt-2 text-sm">{error}</p>
 
         <button
-          onClick={() => window.location.reload()}
-          className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+          onClick={() => fetchOwnerBookings()}
+          className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
         >
           Try Again
         </button>
@@ -213,7 +232,6 @@ export default function OwnerBookingsPage() {
 
   return (
     <div className="space-y-6">
-
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
@@ -227,7 +245,6 @@ export default function OwnerBookingsPage() {
 
       {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-2">
-
         <div className="rounded-xl border bg-white p-5">
           <p className="text-sm text-gray-500">
             Total Bookings
@@ -247,14 +264,11 @@ export default function OwnerBookingsPage() {
             {pendingCount}
           </p>
         </div>
-
       </div>
 
       {/* Booking List */}
       {bookings.length === 0 ? (
-
         <div className="rounded-xl border bg-white px-6 py-16 text-center">
-
           <ClipboardList
             size={45}
             className="mx-auto text-gray-300"
@@ -268,23 +282,16 @@ export default function OwnerBookingsPage() {
             When customers book your studios, their requests
             will appear here.
           </p>
-
         </div>
-
       ) : (
-
         <div className="space-y-5">
-
           {bookings.map((booking) => (
-
             <div
               key={booking._id}
               className="rounded-xl border bg-white p-5 shadow-sm"
             >
-
               {/* Studio and Status */}
               <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-4">
-
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">
                     {booking.studioTitle}
@@ -308,12 +315,10 @@ export default function OwnerBookingsPage() {
                 >
                   {booking.status}
                 </span>
-
               </div>
 
               {/* Customer Information */}
               <div className="py-4">
-
                 <p className="text-sm font-semibold text-gray-800">
                   Customer Information
                 </p>
@@ -325,32 +330,37 @@ export default function OwnerBookingsPage() {
                 <p className="mt-1 text-sm text-gray-600">
                   Email: {booking.customerEmail}
                 </p>
-
               </div>
 
               {/* Booking Details */}
               <div className="grid gap-4 border-t py-4 sm:grid-cols-2 lg:grid-cols-3">
-
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <CalendarDays size={18} className="text-green-600" />
+                  <CalendarDays
+                    size={18}
+                    className="text-green-600"
+                  />
                   {booking.bookingDate}
                 </div>
 
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Clock size={18} className="text-green-600" />
+                  <Clock
+                    size={18}
+                    className="text-green-600"
+                  />
                   {booking.startTime} - {booking.endTime}
                 </div>
 
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Users size={18} className="text-green-600" />
+                  <Users
+                    size={18}
+                    className="text-green-600"
+                  />
                   {booking.guests} Guests
                 </div>
-
               </div>
 
               {/* Price and Actions */}
               <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-
                 <div>
                   <p className="text-sm text-gray-500">
                     Total Price ({booking.totalHours} hours)
@@ -363,9 +373,7 @@ export default function OwnerBookingsPage() {
 
                 {/* Confirm and Reject */}
                 {booking.status === "Pending" && (
-
                   <div className="flex flex-wrap gap-2">
-
                     <button
                       onClick={() =>
                         handleBookingStatus(
@@ -409,21 +417,13 @@ export default function OwnerBookingsPage() {
 
                       Reject
                     </button>
-
                   </div>
-
                 )}
-
               </div>
-
             </div>
-
           ))}
-
         </div>
-
       )}
-
     </div>
   );
 }

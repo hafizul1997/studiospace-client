@@ -30,7 +30,8 @@ type Notification = {
   createdAt: string;
 };
 
-const API_URL = "http://localhost:5000";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function DashboardNavbar({
   onMenuClick,
@@ -49,20 +50,31 @@ export default function DashboardNavbar({
     (notification) => !notification.isRead
   ).length;
 
-  // Fetch notifications
+  // Fetch notifications using authenticated session
   const fetchNotifications = useCallback(async () => {
-    if (!email) return;
+    if (!email) {
+      setNotifications([]);
+      return;
+    }
 
     try {
       setLoadingNotifications(true);
 
       const response = await fetch(
-        `${API_URL}/api/notifications?email=${encodeURIComponent(email)}`,
-        { cache: "no-store" }
+        `${API_URL}/api/notifications`,
+        {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to load notifications");
+        const errorData = await response.json().catch(() => ({}));
+
+        throw new Error(
+          errorData.message || `HTTP Error: ${response.status}`
+        );
       }
 
       const data = await response.json();
@@ -76,8 +88,7 @@ export default function DashboardNavbar({
   }, [email]);
 
   // Load notifications and refresh every 30 seconds
- // Load notifications and refresh every 30 seconds
-useEffect(() => {
+ useEffect(() => {
   if (!email) return;
 
   let interval: ReturnType<typeof setInterval>;
@@ -105,15 +116,19 @@ useEffect(() => {
         `${API_URL}/api/notifications/${notification._id}/read`,
         {
           method: "PATCH",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email }),
         }
       );
 
       if (!response.ok) {
-        throw new Error("Could not mark notification as read");
+        const errorData = await response.json().catch(() => ({}));
+
+        throw new Error(
+          errorData.message || "Could not mark notification as read"
+        );
       }
 
       setNotifications((previous) =>
@@ -124,7 +139,7 @@ useEffect(() => {
         )
       );
     } catch (error) {
-      console.error(error);
+      console.error("Mark notification as read error:", error);
       toast.error("Could not update notification.");
     }
   };
@@ -140,15 +155,19 @@ useEffect(() => {
         `${API_URL}/api/notifications/read-all`,
         {
           method: "PATCH",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email }),
         }
       );
 
       if (!response.ok) {
-        throw new Error("Could not mark all notifications as read");
+        const errorData = await response.json().catch(() => ({}));
+
+        throw new Error(
+          errorData.message || "Could not mark all notifications as read"
+        );
       }
 
       setNotifications((previous) =>
@@ -157,7 +176,7 @@ useEffect(() => {
 
       toast.success("All notifications marked as read.");
     } catch (error) {
-      console.error(error);
+      console.error("Mark all notifications error:", error);
       toast.error("Could not update notifications.");
     } finally {
       setMarkingAll(false);
@@ -196,6 +215,7 @@ useEffect(() => {
     }
   };
 
+  // Format notification date
   const formatDate = (date: string) => {
     return new Date(date).toLocaleString("en-US", {
       month: "short",
@@ -231,7 +251,9 @@ useEffect(() => {
         {/* Notification button */}
         <div className="relative">
           <button
-            onClick={() => setNotificationOpen((previous) => !previous)}
+            onClick={() =>
+              setNotificationOpen((previous) => !previous)
+            }
             className="relative rounded-lg p-2 text-gray-600 transition hover:bg-gray-100"
             aria-label="Notifications"
             aria-expanded={notificationOpen}
@@ -258,10 +280,15 @@ useEffect(() => {
                 {/* Dropdown header */}
                 <div className="flex items-center justify-between border-b px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <BellRing size={18} className="text-gray-700" />
+                    <BellRing
+                      size={18}
+                      className="text-gray-700"
+                    />
+
                     <h3 className="font-semibold text-gray-800">
                       Notifications
                     </h3>
+
                     {unreadCount > 0 && (
                       <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">
                         {unreadCount} new
@@ -275,17 +302,22 @@ useEffect(() => {
                     className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {markingAll ? (
-                      <Loader2 size={13} className="animate-spin" />
+                      <Loader2
+                        size={13}
+                        className="animate-spin"
+                      />
                     ) : (
                       <CheckCheck size={14} />
                     )}
+
                     Read all
                   </button>
                 </div>
 
                 {/* Notification list */}
-            <div className="max-h-96 overflow-y-auto">
-                  {loadingNotifications && notifications.length === 0 ? (
+                <div className="max-h-96 overflow-y-auto">
+                  {loadingNotifications &&
+                  notifications.length === 0 ? (
                     <div className="flex justify-center py-10">
                       <Loader2
                         size={24}
@@ -298,9 +330,11 @@ useEffect(() => {
                         size={30}
                         className="mx-auto mb-2 text-gray-300"
                       />
+
                       <p className="text-sm font-medium text-gray-600">
                         No notifications yet
                       </p>
+
                       <p className="mt-1 text-xs text-gray-400">
                         New booking updates will appear here.
                       </p>
@@ -313,7 +347,9 @@ useEffect(() => {
                           handleNotificationClick(notification)
                         }
                         className={`w-full border-b px-4 py-3 text-left transition hover:bg-gray-50 ${
-                          !notification.isRead ? "bg-blue-50/60" : ""
+                          !notification.isRead
+                            ? "bg-blue-50/60"
+                            : ""
                         }`}
                       >
                         <div className="flex items-start gap-3">
@@ -349,9 +385,7 @@ useEffect(() => {
                   <button
                     onClick={() => {
                       setNotificationOpen(false);
-                      router.push(
-                        "/dashboard/owner-bookings"
-                      );
+                      router.push("/dashboard/owner-bookings");
                     }}
                     className="text-xs font-medium text-blue-600 hover:text-blue-800"
                   >
