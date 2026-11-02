@@ -11,12 +11,18 @@ import {
   Settings,
   Home,
   X,
+  ClipboardList,
 } from "lucide-react";
 
 const menuItems = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { name: "My Listings", href: "/dashboard/listings", icon: Camera },
   { name: "My Bookings", href: "/dashboard/bookings", icon: CalendarDays },
+  {
+    name: "Booking Requests",
+    href: "/dashboard/owner-bookings",
+    icon: ClipboardList,
+  },
   { name: "My Profile", href: "/dashboard/profile", icon: UserRound },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
@@ -63,7 +69,10 @@ export default function DashboardSidebar({
       <nav className="space-y-2">
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href;
+          const active =
+            pathname === item.href ||
+            (item.href !== "/dashboard" &&
+              pathname.startsWith(`${item.href}/`));
 
           return (
             <Link
