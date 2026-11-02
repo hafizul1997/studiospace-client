@@ -105,7 +105,7 @@ export default function AddStudioPage() {
       setSelectedAmenities([]);
 
       setTimeout(() => {
-        router.push("/my-listings");
+       router.push("/dashboard/listings");
       }, 1200);
     } catch (error) {
       toast.error(
