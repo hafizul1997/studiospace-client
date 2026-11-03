@@ -39,6 +39,18 @@ interface StudioDetailsClientProps {
   id: string;
 }
 
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+function getLocalToday(): string {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 export default function StudioDetailsClient({
   id,
 }: StudioDetailsClientProps) {
@@ -54,23 +66,16 @@ export default function StudioDetailsClient({
   const [endTime, setEndTime] = useState("");
   const [guests, setGuests] = useState("1");
 
-  const [localToday, setLocalToday] = useState("");
+  const [localToday] = useState(getLocalToday);
+
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingMessage, setBookingMessage] = useState("");
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
-  // Get today's date after the component mounts
-  useEffect(() => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const day = String(today.getDate()).padStart(2, "0");
-
-    setLocalToday(`${year}-${month}-${day}`);
-  }, []);
-
   // Fetch studio details
   useEffect(() => {
+    if (!id) return;
+
     const controller = new AbortController();
 
     async function fetchStudio() {
@@ -79,8 +84,10 @@ export default function StudioDetailsClient({
         setError("");
 
         const response = await fetch(
-          `http://localhost:5000/api/studios/${id}`,
-          { signal: controller.signal }
+          `${API_URL}/api/studios/${id}`,
+          {
+            signal: controller.signal,
+          }
         );
 
         if (!response.ok) {
@@ -92,6 +99,7 @@ export default function StudioDetailsClient({
         }
 
         const data: Studio = await response.json();
+
         setStudio(data);
       } catch (err) {
         if (err instanceof Error && err.name !== "AbortError") {
@@ -104,9 +112,7 @@ export default function StudioDetailsClient({
       }
     }
 
-    if (id) {
-      fetchStudio();
-    }
+    fetchStudio();
 
     return () => controller.abort();
   }, [id]);
@@ -170,8 +176,9 @@ export default function StudioDetailsClient({
     try {
       setBookingLoading(true);
 
-      const response = await fetch("http://localhost:5000/api/bookings", {
+      const response = await fetch(`${API_URL}/api/bookings`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -186,10 +193,12 @@ export default function StudioDetailsClient({
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data.message || "Booking request failed.");
+        throw new Error(
+          data.message || `Booking request failed (${response.status}).`
+        );
       }
 
       setBookingSuccess(true);
@@ -218,12 +227,36 @@ export default function StudioDetailsClient({
     setBookingSuccess(false);
   }
 
+  // Invalid ID state (no setState inside effect)
+  if (!id) {
+    return (
+      <div className="mx-auto flex min-h-[60vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
+        <h2 className="text-2xl font-bold text-gray-900">
+          Invalid Studio ID
+        </h2>
+
+        <p className="mt-2 text-gray-500">
+          The studio ID you provided is invalid.
+        </p>
+
+        <Link
+          href="/studios"
+          className="mt-6 rounded-lg bg-primary px-6 py-3 font-semibold text-primary-foreground"
+        >
+          Back to Studios
+        </Link>
+      </div>
+    );
+  }
+
   // Loading state
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-3 text-gray-600">Loading studio details...</span>
+        <span className="ml-3 text-gray-600">
+          Loading studio details...
+        </span>
       </div>
     );
   }
@@ -235,9 +268,11 @@ export default function StudioDetailsClient({
         <h2 className="text-2xl font-bold text-gray-900">
           {error || "Studio not found"}
         </h2>
+
         <p className="mt-2 text-gray-500">
           We could not find the studio you are looking for.
         </p>
+
         <Link
           href="/studios"
           className="mt-6 rounded-lg bg-primary px-6 py-3 font-semibold text-primary-foreground"
@@ -251,7 +286,6 @@ export default function StudioDetailsClient({
   return (
     <main className="min-h-screen bg-gray-50 py-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Back button */}
         <Link
           href="/studios"
           className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-gray-600 transition hover:text-primary"
@@ -265,7 +299,9 @@ export default function StudioDetailsClient({
           {studio.imageUrl ? (
             <div
               className="h-full w-full bg-cover bg-center"
-              style={{ backgroundImage: `url("${studio.imageUrl}")` }}
+              style={{
+                backgroundImage: `url("${studio.imageUrl}")`,
+              }}
               role="img"
               aria-label={studio.title}
             />
@@ -276,7 +312,6 @@ export default function StudioDetailsClient({
           )}
         </div>
 
-        {/* Studio details and booking card */}
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Left side */}
           <section className="space-y-6 lg:col-span-2">
@@ -311,6 +346,7 @@ export default function StudioDetailsClient({
               <h2 className="text-xl font-bold text-gray-900">
                 About This Studio
               </h2>
+
               <p className="mt-3 leading-7 text-gray-600">
                 {studio.description || "No description available."}
               </p>
@@ -335,7 +371,9 @@ export default function StudioDetailsClient({
                 <div className="flex items-center gap-3">
                   <Users className="text-primary" size={22} />
                   <div>
-                    <p className="text-sm text-gray-500">Maximum Capacity</p>
+                    <p className="text-sm text-gray-500">
+                      Maximum Capacity
+                    </p>
                     <p className="font-semibold text-gray-900">
                       {studio.maxCapacity} people
                     </p>
@@ -425,6 +463,7 @@ export default function StudioDetailsClient({
             <DialogTitle className="text-2xl font-bold">
               Book This Studio
             </DialogTitle>
+
             <DialogDescription>
               Enter your details and choose your preferred booking date and
               time.
@@ -453,7 +492,6 @@ export default function StudioDetailsClient({
             </div>
           ) : (
             <form onSubmit={handleBooking} className="space-y-4">
-              {/* Customer name */}
               <div>
                 <label
                   htmlFor="customerName"
@@ -461,6 +499,7 @@ export default function StudioDetailsClient({
                 >
                   Full Name
                 </label>
+
                 <input
                   id="customerName"
                   type="text"
@@ -472,7 +511,6 @@ export default function StudioDetailsClient({
                 />
               </div>
 
-              {/* Customer email */}
               <div>
                 <label
                   htmlFor="customerEmail"
@@ -480,6 +518,7 @@ export default function StudioDetailsClient({
                 >
                   Email Address
                 </label>
+
                 <input
                   id="customerEmail"
                   type="email"
@@ -491,7 +530,6 @@ export default function StudioDetailsClient({
                 />
               </div>
 
-              {/* Booking date */}
               <div>
                 <label
                   htmlFor="bookingDate"
@@ -499,6 +537,7 @@ export default function StudioDetailsClient({
                 >
                   Booking Date
                 </label>
+
                 <input
                   id="bookingDate"
                   type="date"
@@ -510,7 +549,6 @@ export default function StudioDetailsClient({
                 />
               </div>
 
-              {/* Start and end time */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label
@@ -519,6 +557,7 @@ export default function StudioDetailsClient({
                   >
                     Start Time
                   </label>
+
                   <input
                     id="startTime"
                     type="time"
@@ -536,6 +575,7 @@ export default function StudioDetailsClient({
                   >
                     End Time
                   </label>
+
                   <input
                     id="endTime"
                     type="time"
@@ -547,7 +587,6 @@ export default function StudioDetailsClient({
                 </div>
               </div>
 
-              {/* Guests */}
               <div>
                 <label
                   htmlFor="guests"
@@ -555,6 +594,7 @@ export default function StudioDetailsClient({
                 >
                   Number of Guests
                 </label>
+
                 <input
                   id="guests"
                   type="number"
@@ -565,12 +605,12 @@ export default function StudioDetailsClient({
                   required
                   className="h-11 w-full rounded-lg border border-gray-300 px-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
+
                 <p className="mt-1 text-xs text-gray-500">
                   Maximum capacity: {studio.maxCapacity} guests
                 </p>
               </div>
 
-              {/* Price calculation */}
               {totalHours > 0 && (
                 <div className="rounded-xl bg-gray-50 p-4">
                   <div className="flex justify-between text-sm text-gray-600">
@@ -590,14 +630,12 @@ export default function StudioDetailsClient({
                 </div>
               )}
 
-              {/* Booking message */}
               {bookingMessage && (
                 <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
                   {bookingMessage}
                 </div>
               )}
 
-              {/* Submit */}
               <button
                 type="submit"
                 disabled={bookingLoading}

@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import toast from "react-hot-toast";
 
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 const categories = [
   "Photo Studio",
   "Film Stage",
@@ -57,46 +60,103 @@ export default function AddStudioPage() {
   ) => {
     event.preventDefault();
 
+    if (isSubmitting) return;
+
     if (!session?.user) {
       toast.error("Please login to add a studio.");
       router.replace("/login");
       return;
     }
 
-    setIsSubmitting(true);
-
     const form = event.currentTarget;
     const formData = new FormData(form);
 
-    const studioData = {
-      title: String(formData.get("title") ?? "").trim(),
-      category: String(formData.get("category") ?? ""),
-      hourlyRate: Number(formData.get("hourlyRate")),
-      securityDeposit: Number(formData.get("securityDeposit")),
-      maxCapacity: Number(formData.get("maxCapacity")),
-      location: String(formData.get("location") ?? "").trim(),
-      imageUrl: String(formData.get("imageUrl") ?? "").trim(),
-      amenities: selectedAmenities,
-      description: String(formData.get("description") ?? "").trim(),
+    const title = String(formData.get("title") ?? "").trim();
+    const category = String(formData.get("category") ?? "");
+    const hourlyRate = Number(formData.get("hourlyRate"));
+    const securityDeposit = Number(formData.get("securityDeposit"));
+    const maxCapacity = Number(formData.get("maxCapacity"));
+    const location = String(formData.get("location") ?? "").trim();
+    const imageUrl = String(formData.get("imageUrl") ?? "").trim();
+    const description = String(formData.get("description") ?? "").trim();
 
-      // Authenticated user information
-      ownerName: session.user.name || "",
-      ownerEmail: session.user.email.toLowerCase(),
-    };
+    // Frontend validation
+    if (
+      !title ||
+      !category ||
+      !location ||
+      !imageUrl ||
+      !description
+    ) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    if (!categories.includes(category)) {
+      toast.error("Please select a valid studio category.");
+      return;
+    }
+
+    if (!Number.isFinite(hourlyRate) || hourlyRate <= 0) {
+      toast.error("Hourly rate must be greater than 0.");
+      return;
+    }
+
+    if (!Number.isFinite(securityDeposit) || securityDeposit < 0) {
+      toast.error("Security deposit cannot be negative.");
+      return;
+    }
+
+    if (
+      !Number.isInteger(maxCapacity) ||
+      maxCapacity < 1
+    ) {
+      toast.error("Maximum capacity must be at least 1.");
+      return;
+    }
+
+    if (description.length < 20) {
+      toast.error("Description must contain at least 20 characters.");
+      return;
+    }
 
     try {
-      const response = await fetch("http://localhost:5000/api/studios", {
+      setIsSubmitting(true);
+
+      const studioData = {
+        title,
+        category,
+        hourlyRate,
+        securityDeposit,
+        maxCapacity,
+        location,
+        imageUrl,
+        amenities: selectedAmenities,
+        description,
+
+        // Informational fields only.
+        // Backend must use authenticated session for ownership.
+        ownerName: session.user.name || "",
+        ownerEmail: session.user.email.toLowerCase(),
+      };
+
+      const response = await fetch(`${API_URL}/api/studios`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(studioData),
       });
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(result.message || "Failed to create studio.");
+        throw new Error(
+          result.message ||
+            result.error ||
+            `Failed to create studio. Status: ${response.status}`
+        );
       }
 
       toast.success("Studio added successfully!");
@@ -104,10 +164,10 @@ export default function AddStudioPage() {
       form.reset();
       setSelectedAmenities([]);
 
-      setTimeout(() => {
-       router.push("/dashboard/listings");
-      }, 1200);
+      router.push("/dashboard/listings");
     } catch (error) {
+      console.error("Add Studio Error:", error);
+
       toast.error(
         error instanceof Error
           ? error.message
@@ -122,7 +182,9 @@ export default function AddStudioPage() {
   if (isPending) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <p className="text-gray-600">Checking authentication...</p>
+        <p className="text-gray-600">
+          Checking authentication...
+        </p>
       </div>
     );
   }
@@ -131,7 +193,9 @@ export default function AddStudioPage() {
   if (!session?.user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <p className="text-gray-600">Redirecting to login...</p>
+        <p className="text-gray-600">
+          Redirecting to login...
+        </p>
       </div>
     );
   }
@@ -231,6 +295,7 @@ export default function AddStudioPage() {
                   name="maxCapacity"
                   type="number"
                   min="1"
+                  step="1"
                   placeholder="e.g. 10"
                   required
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
@@ -259,6 +324,7 @@ export default function AddStudioPage() {
                   name="hourlyRate"
                   type="number"
                   min="1"
+                  step="0.01"
                   placeholder="e.g. 150"
                   required
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
@@ -278,6 +344,7 @@ export default function AddStudioPage() {
                   name="securityDeposit"
                   type="number"
                   min="0"
+                  step="0.01"
                   placeholder="e.g. 300"
                   required
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
