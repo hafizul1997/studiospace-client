@@ -28,12 +28,9 @@ type Booking = {
   totalHours: number;
   hourlyRate: number;
   totalPrice: number;
-  status: "Pending" | "Confirmed" | "Cancelled";
+  status: "Pending" | "Confirmed" | "Cancelled" | "Rejected";
   createdAt: string;
 };
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function MyBookingsPage() {
   const { data: session, isPending } = authClient.useSession();
@@ -54,15 +51,12 @@ export default function MyBookingsPage() {
       try {
         setError("");
 
-        const response = await fetch(
-          `${API_URL}/api/my-bookings`,
-          {
-            method: "GET",
-            credentials: "include",
-            cache: "no-store",
-            signal,
-          }
-        );
+        const response = await fetch("/api/backend/my-bookings", {
+          method: "GET",
+          credentials: "same-origin",
+          cache: "no-store",
+          signal,
+        });
 
         const result = await response.json().catch(() => ({}));
 
@@ -79,10 +73,7 @@ export default function MyBookingsPage() {
 
         setBookings(result);
       } catch (error) {
-        if (
-          error instanceof Error &&
-          error.name !== "AbortError"
-        ) {
+        if (error instanceof Error && error.name !== "AbortError") {
           console.error("My bookings error:", error);
           setError(error.message);
           toast.error("Could not load your bookings");
@@ -93,20 +84,24 @@ export default function MyBookingsPage() {
   );
 
   // Load bookings when session is ready
-  useEffect(() => {
-    if (isPending || !userEmail) return;
+  
+// Load bookings when session is ready
 
-    const controller = new AbortController();
+useEffect(() => {
+  if (isPending || !userEmail) return;
 
-    const initialTimer = setTimeout(() => {
-      fetchMyBookings(controller.signal);
-    }, 0);
+  const controller = new AbortController();
 
-    return () => {
-      clearTimeout(initialTimer);
-      controller.abort();
-    };
-  }, [isPending, userEmail, fetchMyBookings]);
+  const timer = setTimeout(() => {
+    fetchMyBookings(controller.signal);
+  }, 0);
+
+  return () => {
+    clearTimeout(timer);
+    controller.abort();
+  };
+}, [isPending, userEmail, fetchMyBookings]);
+
 
   // Search and status filter
   const filteredBookings = useMemo(() => {
@@ -144,22 +139,21 @@ export default function MyBookingsPage() {
       setCancellingId(booking._id);
 
       const response = await fetch(
-        `${API_URL}/api/bookings/${booking._id}/cancel`,
+        `/api/backend/bookings/${encodeURIComponent(booking._id)}/cancel`,
         {
           method: "PATCH",
-          credentials: "include",
+          credentials: "same-origin",
           headers: {
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({}),
         }
       );
 
       const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(
-          result.message || "Failed to cancel booking"
-        );
+        throw new Error(result.message || "Failed to cancel booking");
       }
 
       // Update UI without refreshing
@@ -171,14 +165,12 @@ export default function MyBookingsPage() {
         )
       );
 
-      toast.success("Booking cancelled successfully!");
+      toast.success(result.message || "Booking cancelled successfully!");
     } catch (error) {
       console.error("Cancel booking error:", error);
 
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Cancellation failed"
+        error instanceof Error ? error.message : "Cancellation failed"
       );
     } finally {
       setCancellingId(null);
@@ -220,9 +212,7 @@ export default function MyBookingsPage() {
   if (error) {
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">
-        <h2 className="font-semibold">
-          Unable to Load Your Bookings
-        </h2>
+        <h2 className="font-semibold">Unable to Load Your Bookings</h2>
 
         <p className="mt-2 text-sm">{error}</p>
 
@@ -244,6 +234,8 @@ export default function MyBookingsPage() {
         return "bg-green-100 text-green-700";
       case "Cancelled":
         return "bg-red-100 text-red-700";
+      case "Rejected":
+        return "bg-gray-100 text-gray-700";
       default:
         return "bg-yellow-100 text-yellow-700";
     }
@@ -253,9 +245,7 @@ export default function MyBookingsPage() {
     <div className="space-y-6 p-4 md:p-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          My Bookings
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
 
         <p className="mt-1 text-sm text-gray-500">
           View and manage your studio booking requests.
@@ -266,7 +256,6 @@ export default function MyBookingsPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border bg-white p-5">
           <p className="text-sm text-gray-500">Total Bookings</p>
-
           <h2 className="mt-2 text-2xl font-bold">
             {currentBookings.length}
           </h2>
@@ -274,7 +263,6 @@ export default function MyBookingsPage() {
 
         <div className="rounded-xl border bg-white p-5">
           <p className="text-sm text-gray-500">Pending</p>
-
           <h2 className="mt-2 text-2xl font-bold text-yellow-600">
             {currentBookings.filter((b) => b.status === "Pending").length}
           </h2>
@@ -282,7 +270,6 @@ export default function MyBookingsPage() {
 
         <div className="rounded-xl border bg-white p-5">
           <p className="text-sm text-gray-500">Confirmed</p>
-
           <h2 className="mt-2 text-2xl font-bold text-green-600">
             {currentBookings.filter((b) => b.status === "Confirmed").length}
           </h2>
@@ -315,6 +302,7 @@ export default function MyBookingsPage() {
           <option value="Pending">Pending</option>
           <option value="Confirmed">Confirmed</option>
           <option value="Cancelled">Cancelled</option>
+          <option value="Rejected">Rejected</option>
         </select>
       </div>
 
@@ -325,10 +313,7 @@ export default function MyBookingsPage() {
       {/* Booking List */}
       {filteredBookings.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-300 py-16 text-center">
-          <CalendarDays
-            size={40}
-            className="mx-auto text-gray-400"
-          />
+          <CalendarDays size={40} className="mx-auto text-gray-400" />
 
           <h2 className="mt-4 text-lg font-semibold text-gray-800">
             {currentBookings.length === 0
@@ -386,7 +371,6 @@ export default function MyBookingsPage() {
 
                   <div>
                     <p className="text-xs text-gray-500">Booking Date</p>
-
                     <p className="text-sm font-medium">
                       {booking.bookingDate}
                     </p>
@@ -398,7 +382,6 @@ export default function MyBookingsPage() {
 
                   <div>
                     <p className="text-xs text-gray-500">Time</p>
-
                     <p className="text-sm font-medium">
                       {booking.startTime} - {booking.endTime}
                     </p>
@@ -410,7 +393,6 @@ export default function MyBookingsPage() {
 
                   <div>
                     <p className="text-xs text-gray-500">Guests</p>
-
                     <p className="text-sm font-medium">
                       {booking.guests} people
                     </p>
@@ -422,7 +404,6 @@ export default function MyBookingsPage() {
 
                   <div>
                     <p className="text-xs text-gray-500">Duration</p>
-
                     <p className="text-sm font-medium">
                       {booking.totalHours} hours
                     </p>

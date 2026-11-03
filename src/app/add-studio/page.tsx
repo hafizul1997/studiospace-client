@@ -6,9 +6,6 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import toast from "react-hot-toast";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
 const categories = [
   "Photo Studio",
   "Film Stage",
@@ -92,37 +89,81 @@ export default function AddStudioPage() {
       return;
     }
 
+    if (title.length > 120) {
+      toast.error("Studio title cannot exceed 120 characters.");
+      return;
+    }
+
     if (!categories.includes(category)) {
       toast.error("Please select a valid studio category.");
       return;
     }
 
-    if (!Number.isFinite(hourlyRate) || hourlyRate <= 0) {
-      toast.error("Hourly rate must be greater than 0.");
+    if (
+      !Number.isFinite(hourlyRate) ||
+      hourlyRate <= 0 ||
+      hourlyRate > 1000000
+    ) {
+      toast.error("Please enter a valid hourly rate.");
       return;
     }
 
-    if (!Number.isFinite(securityDeposit) || securityDeposit < 0) {
-      toast.error("Security deposit cannot be negative.");
+    if (
+      !Number.isFinite(securityDeposit) ||
+      securityDeposit < 0 ||
+      securityDeposit > 10000000
+    ) {
+      toast.error("Please enter a valid security deposit.");
       return;
     }
 
     if (
       !Number.isInteger(maxCapacity) ||
-      maxCapacity < 1
+      maxCapacity < 1 ||
+      maxCapacity > 10000
     ) {
-      toast.error("Maximum capacity must be at least 1.");
+      toast.error("Maximum capacity must be between 1 and 10000.");
       return;
     }
 
-    if (description.length < 20) {
-      toast.error("Description must contain at least 20 characters.");
+    if (location.length > 200) {
+      toast.error("Location cannot exceed 200 characters.");
+      return;
+    }
+
+    try {
+      const parsedImageUrl = new URL(imageUrl);
+
+      if (
+        !["http:", "https:"].includes(parsedImageUrl.protocol) ||
+        imageUrl.length > 2048
+      ) {
+        toast.error("Please enter a valid image URL.");
+        return;
+      }
+    } catch {
+      toast.error("Please enter a valid image URL.");
+      return;
+    }
+
+    if (selectedAmenities.length > 30) {
+      toast.error("You can select up to 30 amenities.");
+      return;
+    }
+
+    if (description.length < 20 || description.length > 3000) {
+      toast.error(
+        "Description must contain 20 to 3000 characters."
+      );
       return;
     }
 
     try {
       setIsSubmitting(true);
 
+      // Send only fields accepted by the backend.
+      // Owner information is assigned by the backend
+      // using the authenticated session.
       const studioData = {
         title,
         category,
@@ -133,16 +174,12 @@ export default function AddStudioPage() {
         imageUrl,
         amenities: selectedAmenities,
         description,
-
-        // Informational fields only.
-        // Backend must use authenticated session for ownership.
-        ownerName: session.user.name || "",
-        ownerEmail: session.user.email.toLowerCase(),
       };
 
-      const response = await fetch(`${API_URL}/api/studios`, {
+      // Same-origin Next.js proxy request
+      const response = await fetch("/api/backend/studios", {
         method: "POST",
-        credentials: "include",
+        credentials: "same-origin",
         headers: {
           "Content-Type": "application/json",
         },
@@ -247,6 +284,7 @@ export default function AddStudioPage() {
                   id="title"
                   name="title"
                   type="text"
+                  maxLength={120}
                   placeholder="e.g. Creative Photography Studio"
                   required
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
@@ -295,6 +333,7 @@ export default function AddStudioPage() {
                   name="maxCapacity"
                   type="number"
                   min="1"
+                  max="10000"
                   step="1"
                   placeholder="e.g. 10"
                   required
@@ -324,6 +363,7 @@ export default function AddStudioPage() {
                   name="hourlyRate"
                   type="number"
                   min="1"
+                  max="1000000"
                   step="0.01"
                   placeholder="e.g. 150"
                   required
@@ -344,6 +384,7 @@ export default function AddStudioPage() {
                   name="securityDeposit"
                   type="number"
                   min="0"
+                  max="10000000"
                   step="0.01"
                   placeholder="e.g. 300"
                   required
@@ -371,6 +412,7 @@ export default function AddStudioPage() {
                 id="location"
                 name="location"
                 type="text"
+                maxLength={200}
                 placeholder="e.g. Al Mizhar, Dubai, UAE"
                 required
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
@@ -396,6 +438,7 @@ export default function AddStudioPage() {
                 id="imageUrl"
                 name="imageUrl"
                 type="url"
+                maxLength={2048}
                 placeholder="https://example.com/studio-image.jpg"
                 required
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
@@ -458,6 +501,7 @@ export default function AddStudioPage() {
                 name="description"
                 rows={5}
                 minLength={20}
+                maxLength={3000}
                 placeholder="Describe your studio, equipment, facilities, and what makes it special..."
                 required
                 className="w-full resize-y rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"

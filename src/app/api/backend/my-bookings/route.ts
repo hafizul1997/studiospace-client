@@ -1,18 +1,22 @@
-import { cookies } from "next/headers";
+
 import { NextResponse } from "next/server";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const cookieStore = await cookies();
+    const cookieHeader = request.headers.get("cookie");
 
-    const cookieHeader = cookieStore
-      .getAll()
-      .map((cookie) => `${cookie.name}=${cookie.value}`)
-      .join("; ");
+    if (!cookieHeader) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Please login first.",
+        },
+        { status: 401 }
+      );
+    }
 
     const response = await fetch(`${API_URL}/api/my-bookings`, {
       method: "GET",

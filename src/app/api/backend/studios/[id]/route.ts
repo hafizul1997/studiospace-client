@@ -1,40 +1,34 @@
+
 import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-type RouteContext = {
-  params: Promise<{ id: string }>;
-};
+// Helper: Get authenticated cookies
+async function getCookieHeader(): Promise<string> {
+  const cookieStore = await cookies();
 
-async function forwardRequest(
-  request: NextRequest,
-  context: RouteContext,
-  method: "PATCH" | "DELETE"
+  return cookieStore
+    .getAll()
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+    .join("; ");
+}
+
+// GET: Get single studio
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params;
-    const cookieStore = await cookies();
-
-    const headers: Record<string, string> = {
-      Cookie: cookieStore.toString(),
-    };
-
-    const options: RequestInit = {
-      method,
-      headers,
-      cache: "no-store",
-    };
-
-    if (method === "PATCH") {
-      headers["Content-Type"] = "application/json";
-      options.body = await request.text();
-    }
+    const { id } = await params;
 
     const response = await fetch(
       `${API_URL}/api/studios/${encodeURIComponent(id)}`,
-      options
+      {
+        method: "GET",
+        cache: "no-store",
+      }
     );
 
     const data = await response.json().catch(() => ({}));
@@ -43,7 +37,7 @@ async function forwardRequest(
       status: response.status,
     });
   } catch (error) {
-    console.error(`${method} Studio Proxy Error:`, error);
+    console.error("Get Studio Proxy Error:", error);
 
     return NextResponse.json(
       {
@@ -55,16 +49,102 @@ async function forwardRequest(
   }
 }
 
+// PATCH: Update studio
 export async function PATCH(
-  request: NextRequest,
-  context: RouteContext
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  return forwardRequest(request, context, "PATCH");
+  try {
+    const { id } = await params;
+    const cookieHeader = await getCookieHeader();
+
+    if (!cookieHeader) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Please login first.",
+        },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+
+    const response = await fetch(
+      `${API_URL}/api/studios/${encodeURIComponent(id)}`,
+      {
+        method: "PATCH",
+        headers: {
+          Cookie: cookieHeader,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        cache: "no-store",
+      }
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    return NextResponse.json(data, {
+      status: response.status,
+    });
+  } catch (error) {
+    console.error("Update Studio Proxy Error:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Unable to connect to backend.",
+      },
+      { status: 500 }
+    );
+  }
 }
 
+// DELETE: Delete studio
 export async function DELETE(
-  request: NextRequest,
-  context: RouteContext
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  return forwardRequest(request, context, "DELETE");
+  try {
+    const { id } = await params;
+    const cookieHeader = await getCookieHeader();
+
+    if (!cookieHeader) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Please login first.",
+        },
+        { status: 401 }
+      );
+    }
+
+    const response = await fetch(
+      `${API_URL}/api/studios/${encodeURIComponent(id)}`,
+      {
+        method: "DELETE",
+        headers: {
+          Cookie: cookieHeader,
+        },
+        cache: "no-store",
+      }
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    return NextResponse.json(data, {
+      status: response.status,
+    });
+  } catch (error) {
+    console.error("Delete Studio Proxy Error:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Unable to connect to backend.",
+      },
+      { status: 500 }
+    );
+  }
 }
