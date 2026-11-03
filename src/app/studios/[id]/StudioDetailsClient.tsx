@@ -84,9 +84,10 @@ export default function StudioDetailsClient({
         setError("");
 
         const response = await fetch(
-          `${API_URL}/api/studios/${id}`,
+          `${API_URL}/api/studios/${encodeURIComponent(id)}`,
           {
             signal: controller.signal,
+            cache: "no-store",
           }
         );
 
@@ -112,7 +113,7 @@ export default function StudioDetailsClient({
       }
     }
 
-    fetchStudio();
+    void fetchStudio();
 
     return () => controller.abort();
   }, [id]);
@@ -176,9 +177,10 @@ export default function StudioDetailsClient({
     try {
       setBookingLoading(true);
 
-      const response = await fetch(`${API_URL}/api/bookings`, {
+      // Send booking through the Next.js same-origin proxy
+      const response = await fetch("/api/backend/bookings", {
         method: "POST",
-        credentials: "include",
+        credentials: "same-origin",
         headers: {
           "Content-Type": "application/json",
         },
@@ -191,6 +193,7 @@ export default function StudioDetailsClient({
           endTime,
           guests: guestNumber,
         }),
+        cache: "no-store",
       });
 
       const data = await response.json().catch(() => ({}));
@@ -227,7 +230,7 @@ export default function StudioDetailsClient({
     setBookingSuccess(false);
   }
 
-  // Invalid ID state (no setState inside effect)
+  // Invalid ID state
   if (!id) {
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
@@ -295,7 +298,8 @@ export default function StudioDetailsClient({
         </Link>
 
         {/* Studio image */}
-<div className="relative h-[/280px] overflow-hidden rounded-2xl bg-gray-200 sm:h-[/400px]">          {studio.imageUrl ? (
+        <div className="relative h-[/280px] overflow-hidden rounded-2xl bg-gray-200 sm:h-[/400px]">
+          {studio.imageUrl ? (
             <div
               className="h-full w-full bg-cover bg-center"
               style={{
@@ -630,7 +634,13 @@ export default function StudioDetailsClient({
               )}
 
               {bookingMessage && (
-                <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                <div
+                  className={`rounded-lg p-3 text-sm ${
+                    bookingSuccess
+                      ? "bg-green-50 text-green-700"
+                      : "bg-red-50 text-red-700"
+                  }`}
+                >
                   {bookingMessage}
                 </div>
               )}
