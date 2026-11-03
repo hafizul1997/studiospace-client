@@ -23,10 +23,11 @@ interface Studio {
   ownerEmail: string;
 }
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+interface ApiError {
+  success?: boolean;
+  message?: string;
+}
 
-// Safely read JSON response
 const readJsonResponse = async (response: Response) => {
   const text = await response.text();
 
@@ -34,7 +35,7 @@ const readJsonResponse = async (response: Response) => {
     return text ? JSON.parse(text) : {};
   } catch {
     throw new Error(
-      "Server returned an invalid response. Please check that your backend is running."
+      "Server returned an invalid response. Please try again."
     );
   }
 };
@@ -45,27 +46,36 @@ export default function MyListingsPage() {
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
 
-  // Fetch listings using authenticated session
   const fetchMyListings = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await fetch(`${API_URL}/api/my-listings`, {
+      // Use Next.js same-origin proxy.
+      // Do not call Render backend directly from the browser.
+      const response = await fetch("/api/backend/my-listings", {
         method: "GET",
-        credentials: "include",
+        credentials: "same-origin",
+        cache: "no-store",
       });
 
-      const data = await readJsonResponse(response);
+      const data = await readJsonResponse(response) as
+        | Studio[]
+        | ApiError;
 
       if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to load your listings."
-        );
+        const message =
+          !Array.isArray(data) && data.message
+            ? data.message
+            : "Failed to load your listings.";
+
+        throw new Error(message);
       }
 
       if (!Array.isArray(data)) {
-        throw new Error("Invalid response received from server.");
+        throw new Error(
+          "Invalid response received from server."
+        );
       }
 
       setStudios(data);
@@ -86,14 +96,13 @@ export default function MyListingsPage() {
     }
   }, []);
 
-  // Automatically load listings when page opens
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      void fetchMyListings();
-    }, 0);
+ useEffect(() => {
+  const timer = setTimeout(() => {
+    void fetchMyListings();
+  }, 0);
 
-    return () => clearTimeout(timer);
-  }, [fetchMyListings]);
+  return () => clearTimeout(timer);
+}, [fetchMyListings]);
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-12">
@@ -265,7 +274,6 @@ export default function MyListingsPage() {
             </div>
           </>
         )}
-
       </div>
     </main>
   );
