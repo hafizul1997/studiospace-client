@@ -29,9 +29,6 @@ type Booking = {
   status: "Pending" | "Confirmed" | "Rejected" | "Cancelled";
 };
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
 export default function OwnerBookingsPage() {
   const { data: session, isPending } = authClient.useSession();
 
@@ -44,53 +41,58 @@ export default function OwnerBookingsPage() {
 
   // Fetch Owner Bookings
   const fetchOwnerBookings = useCallback(
-    async (signal?: AbortSignal) => {
-      if (!ownerEmail) return;
+  async (signal?: AbortSignal) => {
+    if (!ownerEmail) return;
 
-      try {
-        setLoading(true);
-        setError("");
+    try {
+      setLoading(true);
+      setError("");
 
-        const response = await fetch(
-          `${API_URL}/api/owner-bookings`,
-          {
-            method: "GET",
-            credentials: "include",
-            cache: "no-store",
-            signal,
-          }
+      const response = await fetch("/api/backend/owner-bookings", {
+        method: "GET",
+        cache: "no-store",
+        signal,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            `Failed to load booking requests. Status: ${response.status}`
         );
-
-        const result = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-          throw new Error(
-            result.message ||
-              `Failed to load booking requests. Status: ${response.status}`
-          );
-        }
-
-        if (!Array.isArray(result)) {
-          throw new Error("Invalid booking data received from server.");
-        }
-
-        setBookings(result);
-      } catch (err) {
-        if (
-          err instanceof Error &&
-          err.name !== "AbortError"
-        ) {
-          console.error("Owner bookings fetch error:", err);
-          setError(err.message);
-        }
-      } finally {
-        if (!signal?.aborted) {
-          setLoading(false);
-        }
       }
-    },
-    [ownerEmail]
-  );
+
+      // Supports both direct array and object response
+      const bookingData = Array.isArray(data)
+        ? data
+        : data.bookings;
+
+      if (!Array.isArray(bookingData)) {
+        throw new Error("Invalid booking data received from server.");
+      }
+
+      setBookings(bookingData);
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        return;
+      }
+
+      console.error("Owner bookings fetch error:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong."
+      );
+    } finally {
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
+    }
+  },
+  [ownerEmail]
+);
 
   // Load Owner Bookings
   useEffect(() => {
@@ -127,10 +129,9 @@ export default function OwnerBookingsPage() {
       setUpdatingId(bookingId);
 
       const response = await fetch(
-        `${API_URL}/api/bookings/${bookingId}/status`,
+        `/api/backend/bookings/${encodeURIComponent(bookingId)}/status`,
         {
           method: "PATCH",
-          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
@@ -140,7 +141,7 @@ export default function OwnerBookingsPage() {
 
       const result = await response.json().catch(() => ({}));
 
-      if (!response.ok) {
+      if (!response.ok || !result.success) {
         throw new Error(
           result.message || `Could not ${action} booking.`
         );

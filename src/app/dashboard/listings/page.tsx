@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -14,9 +15,6 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type Studio = {
   _id: string;
@@ -85,14 +83,17 @@ export default function MyListingsPage() {
   // Fetch owner's studios
   const fetchMyListings = useCallback(
     async (signal?: AbortSignal) => {
-      if (!userEmail) return;
+      if (!userEmail) {
+        setStudios([]);
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoadError("");
 
-        const response = await fetch(`${API_URL}/api/my-listings`, {
+        const response = await fetch("/api/backend/my-listings", {
           method: "GET",
-          credentials: "include",
           cache: "no-store",
           signal,
         });
@@ -134,20 +135,23 @@ export default function MyListingsPage() {
     [userEmail]
   );
 
-  useEffect(() => {
-    if (isPending || !userEmail) return;
+  // Load listings when session is ready
+  // Load listings when session is ready
+useEffect(() => {
+  if (isPending || !userEmail) return;
 
-    const controller = new AbortController();
+  const controller = new AbortController();
 
-    const timer = setTimeout(() => {
-      fetchMyListings(controller.signal);
-    }, 0);
+  const loadListings = async () => {
+    await fetchMyListings(controller.signal);
+  };
 
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [isPending, userEmail, fetchMyListings]);
+  void loadListings();
+
+  return () => {
+    controller.abort();
+  };
+}, [isPending, userEmail, fetchMyListings]);
 
   // Search and category filter
   const filteredStudios = useMemo(() => {
@@ -227,10 +231,9 @@ export default function MyListingsPage() {
       setSaving(true);
 
       const response = await fetch(
-        `${API_URL}/api/studios/${editingStudio._id}`,
+        `/api/backend/studios/${encodeURIComponent(editingStudio._id)}`,
         {
           method: "PATCH",
-          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
@@ -254,7 +257,6 @@ export default function MyListingsPage() {
         );
       }
 
-      // Update UI without refreshing
       setStudios((previous) =>
         previous.map((studio) =>
           studio._id === editingStudio._id
@@ -296,10 +298,9 @@ export default function MyListingsPage() {
       setDeletingId(studio._id);
 
       const response = await fetch(
-        `${API_URL}/api/studios/${studio._id}`,
+        `/api/backend/studios/${encodeURIComponent(studio._id)}`,
         {
           method: "DELETE",
-          credentials: "include",
         }
       );
 
@@ -338,17 +339,22 @@ export default function MyListingsPage() {
   }
 
   // Login check
-  if (!session?.user) {
+  if (!session?.user || !userEmail) {
     return (
       <div className="p-8 text-center">
         <h2 className="text-xl font-semibold">Please log in</h2>
-        <Link href="/login" className="mt-3 inline-block text-blue-600">
+
+        <Link
+          href="/login"
+          className="mt-3 inline-block text-blue-600"
+        >
           Go to Login
         </Link>
       </div>
     );
   }
 
+  // Loading
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -381,7 +387,10 @@ export default function MyListingsPage() {
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Listings</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            My Listings
+          </h1>
+
           <p className="mt-1 text-sm text-gray-500">
             Manage the studios you have added.
           </p>
@@ -536,7 +545,9 @@ export default function MyListingsPage() {
                     className="flex items-center justify-center gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Trash2 size={16} />
-                    {deletingId === studio._id ? "Deleting..." : "Delete"}
+                    {deletingId === studio._id
+                      ? "Deleting..."
+                      : "Delete"}
                   </button>
                 </div>
               </div>
