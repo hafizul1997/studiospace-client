@@ -16,7 +16,8 @@ interface Studio {
   imageUrl: string;
   rating?: number;
 }
-
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const categories = [
   "All Categories",
   "Photo Studio",
@@ -43,8 +44,11 @@ function StudiosContent() {
     const fetchStudios = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/studios"
-        );
+  `${API_URL}/api/studios`,
+  {
+    credentials: "include",
+  }
+);
 
         if (!response.ok) {
           throw new Error("Failed to load studios");

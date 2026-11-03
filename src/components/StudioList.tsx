@@ -1,8 +1,10 @@
 import React from 'react';
 import { Studio } from '@/app/Type/Studio';
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const StudioList = async() => {
-      const response = await fetch(
-    "http://localhost:5000/api/studios",
+     const response = await fetch(
+    `${API_URL}/api/studios`,
     { cache: "no-store" }
   );
 

@@ -12,7 +12,8 @@ import {
 } from "lucide-react";
 
 import type { Studio } from "@/app/Type/Studio";
-
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 export default function FeaturedStudios() {
   const [studios, setStudios] = useState<Studio[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +23,10 @@ export default function FeaturedStudios() {
     const fetchFeaturedStudios = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/featured-studios"
+          `${API_URL}/api/featured-studios`,
+          {
+            credentials: "include",
+          }
         );
 
         if (!response.ok) {

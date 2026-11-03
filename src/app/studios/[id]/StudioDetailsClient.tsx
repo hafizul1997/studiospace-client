@@ -295,8 +295,7 @@ export default function StudioDetailsClient({
         </Link>
 
         {/* Studio image */}
-        <div className="relative h-[280px] overflow-hidden rounded-2xl bg-gray-200 sm:h-[400px]">
-          {studio.imageUrl ? (
+<div className="relative h-[/280px] overflow-hidden rounded-2xl bg-gray-200 sm:h-[/400px]">          {studio.imageUrl ? (
             <div
               className="h-full w-full bg-cover bg-center"
               style={{
@@ -458,7 +457,7 @@ export default function StudioDetailsClient({
 
       {/* Booking Dialog */}
       <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[520px]">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[/520px]">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">
               Book This Studio
