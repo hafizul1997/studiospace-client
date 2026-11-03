@@ -13,8 +13,11 @@ import {
   RefreshCw,
   AlertCircle,
   CalendarCheck,
+  Search,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+
 interface Booking {
   _id: string;
   status?: string;
@@ -303,14 +306,38 @@ export default function MyBookingsPage() {
                 size={45}
                 className="mx-auto mb-4 text-slate-300"
               />
+
               <h3 className="text-lg font-bold text-slate-800">
                 {bookings.length === 0
                   ? "No bookings yet"
                   : "No bookings in this category"}
               </h3>
+
               <p className="mt-2 text-sm text-slate-500">
-                Your studio reservations will appear here.
+                {bookings.length === 0
+                  ? "You haven't booked any studio yet. Explore our available studios and make your first reservation."
+                  : "There are no bookings available in this category."}
               </p>
+
+              {/* Empty State CTA */}
+              {bookings.length === 0 && (
+                <Link
+                  href="/studios"
+                  className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                >
+                  <Search size={18} />
+                  Explore Studios
+                </Link>
+              )}
+
+              {bookings.length > 0 && (
+                <button
+                  onClick={() => setFilter("all")}
+                  className="mt-6 inline-flex items-center justify-center rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                >
+                  View All Bookings
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid gap-5 md:grid-cols-2">
