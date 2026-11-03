@@ -30,9 +30,6 @@ type Notification = {
   createdAt: string;
 };
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
 export default function DashboardNavbar({
   onMenuClick,
 }: DashboardNavbarProps) {
@@ -45,12 +42,16 @@ export default function DashboardNavbar({
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
+  const [markingId, setMarkingId] = useState<string | null>(null);
 
   const unreadCount = notifications.filter(
     (notification) => !notification.isRead
   ).length;
 
-  // Fetch notifications using authenticated session
+  // ======================================
+  // Fetch Notifications
+  // ======================================
+
   const fetchNotifications = useCallback(async () => {
     if (!email) {
       setNotifications([]);
@@ -60,24 +61,18 @@ export default function DashboardNavbar({
     try {
       setLoadingNotifications(true);
 
-      const response = await fetch(
-        `${API_URL}/api/notifications`,
-        {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-        }
-      );
+      const response = await fetch("/api/backend/notifications", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const data = await response.json().catch(() => []);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-
         throw new Error(
-          errorData.message || `HTTP Error: ${response.status}`
+          data?.message || `HTTP Error: ${response.status}`
         );
       }
-
-      const data = await response.json();
 
       setNotifications(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -87,47 +82,63 @@ export default function DashboardNavbar({
     }
   }, [email]);
 
-  // Load notifications and refresh every 30 seconds
- useEffect(() => {
-  if (!email) return;
+  // ======================================
+  // Load Notifications Every 30 Seconds
+  // ======================================
 
-  let interval: ReturnType<typeof setInterval>;
+  useEffect(() => {
+    if (!email) return;
 
-  const initialTimer = setTimeout(() => {
-    fetchNotifications();
+    let interval: ReturnType<typeof setInterval> | undefined;
 
-    interval = setInterval(() => {
+    const initialTimer = setTimeout(() => {
       fetchNotifications();
-    }, 30000);
-  }, 0);
 
-  return () => {
-    clearTimeout(initialTimer);
-    clearInterval(interval);
-  };
-}, [email, fetchNotifications]);
+      interval = setInterval(() => {
+        fetchNotifications();
+      }, 30000);
+    }, 0);
 
-  // Mark one notification as read
-  const handleMarkAsRead = async (notification: Notification) => {
-    if (notification.isRead) return;
+    return () => {
+      clearTimeout(initialTimer);
+
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [email, fetchNotifications]);
+
+  // ======================================
+  // Mark Single Notification as Read
+  // ======================================
+
+  const handleMarkAsRead = async (
+    notification: Notification
+  ): Promise<boolean> => {
+    if (notification.isRead) return true;
 
     try {
+      setMarkingId(notification._id);
+
       const response = await fetch(
-        `${API_URL}/api/notifications/${notification._id}/read`,
+        `/api/backend/notifications/${encodeURIComponent(
+          notification._id
+        )}/read`,
         {
           method: "PATCH",
-          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({}),
+          cache: "no-store",
         }
       );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+      const data = await response.json().catch(() => ({}));
 
+      if (!response.ok) {
         throw new Error(
-          errorData.message || "Could not mark notification as read"
+          data?.message || "Failed to mark notification as read."
         );
       }
 
@@ -138,56 +149,84 @@ export default function DashboardNavbar({
             : item
         )
       );
+
+      return true;
     } catch (error) {
-      console.error("Mark notification as read error:", error);
-      toast.error("Could not update notification.");
+      console.error("Mark as Read Error:", error);
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to mark notification as read."
+      );
+
+      return false;
+    } finally {
+      setMarkingId(null);
     }
   };
 
-  // Mark all notifications as read
+  // ======================================
+  // Mark All Notifications as Read
+  // ======================================
+
   const handleMarkAllAsRead = async () => {
-    if (!email || unreadCount === 0) return;
+    if (unreadCount === 0 || markingAll) return;
 
     try {
       setMarkingAll(true);
 
       const response = await fetch(
-        `${API_URL}/api/notifications/read-all`,
+        "/api/backend/notifications/read-all",
         {
           method: "PATCH",
-          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({}),
+          cache: "no-store",
         }
       );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+      const data = await response.json().catch(() => ({}));
 
+      if (!response.ok) {
         throw new Error(
-          errorData.message || "Could not mark all notifications as read"
+          data?.message || "Failed to update notifications."
         );
       }
 
       setNotifications((previous) =>
-        previous.map((item) => ({ ...item, isRead: true }))
+        previous.map((item) => ({
+          ...item,
+          isRead: true,
+        }))
       );
 
       toast.success("All notifications marked as read.");
     } catch (error) {
-      console.error("Mark all notifications error:", error);
-      toast.error("Could not update notifications.");
+      console.error("Mark All as Read Error:", error);
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to update notifications."
+      );
     } finally {
       setMarkingAll(false);
     }
   };
 
-  // Open relevant dashboard page
+  // ======================================
+  // Handle Notification Click
+  // ======================================
+
   const handleNotificationClick = async (
     notification: Notification
   ) => {
-    await handleMarkAsRead(notification);
+    const success = await handleMarkAsRead(notification);
+
+    if (!success) return;
 
     setNotificationOpen(false);
 
@@ -195,13 +234,17 @@ export default function DashboardNavbar({
       router.push("/dashboard/owner-bookings");
     } else if (
       notification.type === "booking_confirmed" ||
-      notification.type === "booking_rejected"
+      notification.type === "booking_rejected" ||
+      notification.type === "booking"
     ) {
       router.push("/dashboard/bookings");
     }
   };
 
+  // ======================================
   // Logout
+  // ======================================
+
   const handleLogout = async () => {
     try {
       await authClient.signOut();
@@ -210,20 +253,34 @@ export default function DashboardNavbar({
 
       router.push("/login");
       router.refresh();
-    } catch {
+    } catch (error) {
+      console.error("Logout Error:", error);
       toast.error("Logout failed. Please try again.");
     }
   };
 
-  // Format notification date
+  // ======================================
+  // Format Notification Date
+  // ======================================
+
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleString("en-US", {
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "Recently";
+    }
+
+    return parsedDate.toLocaleString("en-US", {
       month: "short",
       day: "numeric",
       hour: "numeric",
       minute: "2-digit",
     });
   };
+
+  // ======================================
+  // UI
+  // ======================================
 
   return (
     <header className="relative z-30 flex h-16 shrink-0 items-center justify-between border-b bg-white px-4 sm:px-6">
@@ -346,7 +403,8 @@ export default function DashboardNavbar({
                         onClick={() =>
                           handleNotificationClick(notification)
                         }
-                        className={`w-full border-b px-4 py-3 text-left transition hover:bg-gray-50 ${
+                        disabled={markingId === notification._id}
+                        className={`w-full border-b px-4 py-3 text-left transition hover:bg-gray-50 disabled:cursor-wait ${
                           !notification.isRead
                             ? "bg-blue-50/60"
                             : ""
@@ -374,6 +432,13 @@ export default function DashboardNavbar({
                               {formatDate(notification.createdAt)}
                             </p>
                           </div>
+
+                          {markingId === notification._id && (
+                            <Loader2
+                              size={16}
+                              className="animate-spin text-gray-400"
+                            />
+                          )}
                         </div>
                       </button>
                     ))
