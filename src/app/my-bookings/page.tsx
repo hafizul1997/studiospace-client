@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface Booking {
   _id: string;
@@ -96,6 +97,7 @@ export default function MyBookingsPage() {
     return () => clearTimeout(timer);
   }, [loadBookings]);
 
+  // Cancel Booking with Sonner Toast Notification
   const cancelBooking = async () => {
     if (!selectedBooking) return;
 
@@ -118,11 +120,18 @@ export default function MyBookingsPage() {
         throw new Error(data.message || "Unable to cancel booking.");
       }
 
+      // Success Toast
+      toast.success("Booking cancelled successfully!");
+
       setSelectedBooking(null);
       await loadBookings();
+
     } catch (err) {
-      alert(
-        err instanceof Error ? err.message : "Something went wrong."
+      // Error Toast
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong while cancelling booking."
       );
     } finally {
       setCancelling(false);

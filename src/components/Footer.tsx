@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 
 const studioCategories = [
@@ -13,11 +14,12 @@ export default function Footer() {
     <footer className="border-t border-gray-800 bg-gray-950 text-gray-300">
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+
           {/* Brand Section */}
-          <div>
+          <div className="text-center sm:text-left">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 text-2xl font-bold text-white"
+              className="inline-flex items-center justify-center gap-2 text-2xl font-bold text-white"
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 text-xl">
                 S
@@ -25,12 +27,12 @@ export default function Footer() {
               StudioSpace
             </Link>
 
-            <p className="mt-5 max-w-xs text-sm leading-7 text-gray-400">
+            <p className="mx-auto mt-5 max-w-xs text-sm leading-7 text-gray-400 sm:mx-0">
               Discover and book inspiring creative spaces. Find the perfect
               studio for your next photography, film, podcast, or music project.
             </p>
 
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 flex justify-center gap-3 sm:justify-start">
               <a
                 href="https://www.instagram.com/"
                 target="_blank"
@@ -64,7 +66,7 @@ export default function Footer() {
           </div>
 
           {/* Quick Links */}
-          <div>
+          <div className="text-center sm:text-left">
             <h2 className="text-lg font-semibold text-white">
               Quick Links
             </h2>
@@ -76,34 +78,22 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/studios"
-                  className="transition hover:text-orange-400"
-                >
+                <Link href="/studios" className="transition hover:text-orange-400">
                   Explore Studios
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/add-studio"
-                  className="transition hover:text-orange-400"
-                >
+                <Link href="/add-studio" className="transition hover:text-orange-400">
                   Add Your Studio
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/my-listings"
-                  className="transition hover:text-orange-400"
-                >
+                <Link href="/my-listings" className="transition hover:text-orange-400">
                   My Listings
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/my-bookings"
-                  className="transition hover:text-orange-400"
-                >
+                <Link href="/my-bookings" className="transition hover:text-orange-400">
                   My Bookings
                 </Link>
               </li>
@@ -111,7 +101,7 @@ export default function Footer() {
           </div>
 
           {/* Categories */}
-          <div>
+          <div className="text-center sm:text-left">
             <h2 className="text-lg font-semibold text-white">
               Explore Categories
             </h2>
@@ -120,9 +110,7 @@ export default function Footer() {
               {studioCategories.map((item) => (
                 <li key={item.category}>
                   <Link
-                    href={`/studios?category=${encodeURIComponent(
-                      item.category
-                    )}`}
+                    href={`/studios?category=${encodeURIComponent(item.category)}`}
                     className="transition hover:text-orange-400"
                   >
                     {item.name}
@@ -133,12 +121,12 @@ export default function Footer() {
           </div>
 
           {/* Contact Section */}
-          <div>
+          <div className="text-center sm:text-left">
             <h2 className="text-lg font-semibold text-white">
               Get in Touch
             </h2>
 
-            <p className="mt-5 text-sm leading-7 text-gray-400">
+            <p className="mx-auto mt-5 max-w-xs text-sm leading-7 text-gray-400 sm:mx-0">
               Have a question or need help finding the right creative space?
               We would love to hear from you.
             </p>
@@ -162,23 +150,17 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 flex flex-col gap-4 border-t border-gray-800 pt-6 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-12 flex flex-col items-center gap-4 border-t border-gray-800 pt-6 text-center text-sm sm:flex-row sm:items-center sm:justify-between sm:text-left">
           <p className="text-gray-500">
-           © 2026 StudioSpace. All rights reserved.
+            © 2026 StudioSpace. All rights reserved.
           </p>
 
-          <div className="flex flex-wrap gap-5">
-            <Link
-              href="/privacy-policy"
-              className="transition hover:text-orange-400"
-            >
+          <div className="flex flex-wrap justify-center gap-5 sm:justify-end">
+            <Link href="/privacy-policy" className="transition hover:text-orange-400">
               Privacy Policy
             </Link>
 
-            <Link
-              href="/terms"
-              className="transition hover:text-orange-400"
-            >
+            <Link href="/terms" className="transition hover:text-orange-400">
               Terms of Service
             </Link>
           </div>

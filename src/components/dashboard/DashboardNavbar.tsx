@@ -283,24 +283,25 @@ export default function DashboardNavbar({
   // ======================================
 
   return (
-    <header className="relative z-30 flex h-16 shrink-0 items-center justify-between border-b bg-white px-4 sm:px-6">
+    <header className="relative z-30 flex h-16 min-w-0 shrink-0 items-center justify-between gap-2 border-b bg-white px-3 sm:px-6">
       {/* Left side */}
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <button
+          type="button"
           onClick={onMenuClick}
-          className="rounded-lg p-2 hover:bg-gray-100 lg:hidden"
+          className="shrink-0 rounded-lg p-2 hover:bg-gray-100 lg:hidden"
           aria-label="Open dashboard menu"
         >
           <Menu size={22} />
         </button>
 
-        <h2 className="font-semibold text-gray-800">
+        <h2 className="truncate text-sm font-semibold text-gray-800 sm:text-base">
           Dashboard
         </h2>
       </div>
 
       {/* Right side */}
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
         <span className="hidden text-sm text-gray-600 sm:block">
           {session?.user?.name || "User"}
         </span>
@@ -308,6 +309,7 @@ export default function DashboardNavbar({
         {/* Notification button */}
         <div className="relative">
           <button
+            type="button"
             onClick={() =>
               setNotificationOpen((previous) => !previous)
             }
@@ -328,35 +330,37 @@ export default function DashboardNavbar({
           {notificationOpen && (
             <>
               <button
+                type="button"
                 className="fixed inset-0 z-40 cursor-default"
                 onClick={() => setNotificationOpen(false)}
                 aria-label="Close notifications"
               />
 
-              <div className="absolute right-0 top-12 z-50 w-[min(360px,calc(100vw-32px))] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+              <div className="fixed right-4 top-20 z-50 w-[calc(100vw-32px)] max-w-90 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl sm:absolute sm:right-0 sm:top-12 sm:w-90">
                 {/* Dropdown header */}
-                <div className="flex items-center justify-between border-b px-4 py-3">
-                  <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center justify-between gap-2 border-b px-3 py-3 sm:px-4">
+                  <div className="flex min-w-0 items-center gap-2">
                     <BellRing
                       size={18}
-                      className="text-gray-700"
+                      className="shrink-0 text-gray-700"
                     />
 
-                    <h3 className="font-semibold text-gray-800">
+                    <h3 className="whitespace-nowrap text-sm font-semibold text-gray-800">
                       Notifications
                     </h3>
 
                     {unreadCount > 0 && (
-                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">
+                      <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">
                         {unreadCount} new
                       </span>
                     )}
                   </div>
 
                   <button
+                    type="button"
                     onClick={handleMarkAllAsRead}
                     disabled={unreadCount === 0 || markingAll}
-                    className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-medium text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {markingAll ? (
                       <Loader2
@@ -372,7 +376,7 @@ export default function DashboardNavbar({
                 </div>
 
                 {/* Notification list */}
-                <div className="max-h-96 overflow-y-auto">
+                <div className="max-h-[65vh] overflow-y-auto sm:max-h-96">
                   {loadingNotifications &&
                   notifications.length === 0 ? (
                     <div className="flex justify-center py-10">
@@ -399,18 +403,19 @@ export default function DashboardNavbar({
                   ) : (
                     notifications.map((notification) => (
                       <button
+                        type="button"
                         key={notification._id}
                         onClick={() =>
                           handleNotificationClick(notification)
                         }
                         disabled={markingId === notification._id}
-                        className={`w-full border-b px-4 py-3 text-left transition hover:bg-gray-50 disabled:cursor-wait ${
+                        className={`w-full border-b px-3 py-3 text-left transition hover:bg-gray-50 disabled:cursor-wait sm:px-4 ${
                           !notification.isRead
                             ? "bg-blue-50/60"
                             : ""
                         }`}
                       >
-                        <div className="flex items-start gap-3">
+                        <div className="flex min-w-0 items-start gap-3">
                           <span
                             className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
                               notification.isRead
@@ -420,11 +425,11 @@ export default function DashboardNavbar({
                           />
 
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-gray-800">
+                            <p className="wrap-anywhere text-sm font-semibold text-gray-800">
                               {notification.title}
                             </p>
 
-                            <p className="mt-1 text-xs leading-5 text-gray-600">
+                            <p className="mt-1 wrap-anywhere text-xs leading-5 text-gray-600">
                               {notification.message}
                             </p>
 
@@ -436,7 +441,7 @@ export default function DashboardNavbar({
                           {markingId === notification._id && (
                             <Loader2
                               size={16}
-                              className="animate-spin text-gray-400"
+                              className="shrink-0 animate-spin text-gray-400"
                             />
                           )}
                         </div>
@@ -448,6 +453,7 @@ export default function DashboardNavbar({
                 {/* Footer */}
                 <div className="border-t px-4 py-2 text-center">
                   <button
+                    type="button"
                     onClick={() => {
                       setNotificationOpen(false);
                       router.push("/dashboard/owner-bookings");
@@ -464,11 +470,12 @@ export default function DashboardNavbar({
 
         {/* Logout */}
         <button
+          type="button"
           onClick={handleLogout}
-          className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-red-50 px-2 py-2 text-sm font-medium text-red-600 hover:bg-red-100 sm:gap-2 sm:px-3"
         >
           <LogOut size={17} />
-          <span>Logout</span>
+          <span className="text-xs sm:text-sm">Logout</span>
         </button>
       </div>
     </header>

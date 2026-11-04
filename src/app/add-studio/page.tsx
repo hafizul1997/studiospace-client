@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 const categories = [
   "Photo Studio",
