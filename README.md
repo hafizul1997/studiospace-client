@@ -178,8 +178,8 @@ Use the following credentials to test the application:
 | Field | Value |
 |---|---|
 | Website URL | https://studiospace-client-t65c.vercel.app |
-| Test Email | ADD_YOUR_TEST_EMAIL |
-| Test Password | ADD_YOUR_TEST_PASSWORD |
+| Test Email | arafat20@gmail.com|
+| Test Password | @Arafat12 |
 
 **Note:** Replace the placeholder credentials with a working test account before submission. Do not use your personal account password.
 
