@@ -41,20 +41,24 @@ export default function DashboardSidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r bg-white p-5">
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+
+      {/* Logo */}
       <div className="mb-10 flex items-center justify-between">
         <Link
           href="/"
-          className="text-2xl font-bold text-green-600"
+          className="text-2xl font-bold text-green-600 transition hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
           onClick={onNavigate}
         >
           StudioSpace
         </Link>
 
+        {/* Mobile Close Button */}
         {mobile && (
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-lg p-2 hover:bg-gray-100"
+            className="rounded-lg p-2 text-gray-600 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
             aria-label="Close menu"
           >
             <X size={20} />
@@ -62,13 +66,16 @@ export default function DashboardSidebar({
         )}
       </div>
 
-      <p className="mb-3 text-xs font-semibold uppercase text-gray-400">
+      {/* Menu Heading */}
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
         Dashboard Menu
       </p>
 
-      <nav className="space-y-2">
+      {/* Navigation */}
+      <nav className="space-y-2" aria-label="Dashboard navigation">
         {menuItems.map((item) => {
           const Icon = item.icon;
+
           const active =
             pathname === item.href ||
             (item.href !== "/dashboard" &&
@@ -79,27 +86,33 @@ export default function DashboardSidebar({
               key={item.href}
               href={item.href}
               onClick={onNavigate}
-              className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition ${
+              aria-current={active ? "page" : undefined}
+              className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition duration-200 ${
                 active
-                  ? "bg-green-50 text-green-700"
-                  : "text-gray-600 hover:bg-gray-100"
+                  ? "bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-400"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
               }`}
             >
-              <Icon size={19} />
-              {item.name}
+              <Icon
+                size={19}
+                className="shrink-0"
+              />
+
+              <span>{item.name}</span>
             </Link>
           );
         })}
       </nav>
 
-      <div className="mt-auto">
+      {/* Back to Website */}
+      <div className="mt-auto border-t border-gray-100 pt-4 dark:border-gray-800">
         <Link
           href="/"
           onClick={onNavigate}
-          className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm text-gray-600 hover:bg-gray-100"
+          className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
         >
-          <Home size={19} />
-          Back to Website
+          <Home size={19} className="shrink-0" />
+          <span>Back to Website</span>
         </Link>
       </div>
     </aside>

@@ -17,6 +17,12 @@ const initialProfile: Profile = {
   bio: "",
 };
 
+const inputClasses =
+  "w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-green-500 dark:focus:ring-green-900/40";
+
+const labelClasses =
+  "text-sm font-medium text-gray-700 dark:text-gray-300";
+
 export default function EditProfileForm() {
   const [profile, setProfile] = useState<Profile>(initialProfile);
   const [loading, setLoading] = useState(true);
@@ -27,7 +33,9 @@ export default function EditProfileForm() {
 
     async function loadProfile() {
       try {
-        const response = await fetch("/api/profile");
+        const response = await fetch("/api/profile", {
+          cache: "no-store",
+        });
 
         if (!response.ok) {
           throw new Error("Could not load profile.");
@@ -91,7 +99,12 @@ export default function EditProfileForm() {
         throw new Error(data.message || "Failed to update profile.");
       }
 
-      setProfile(data.profile);
+      setProfile({
+        name: data.profile?.name ?? "",
+        phone: data.profile?.phone ?? "",
+        bio: data.profile?.bio ?? "",
+      });
+
       toast.success("Profile updated successfully!");
     } catch (error) {
       toast.error(
@@ -106,7 +119,7 @@ export default function EditProfileForm() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border bg-white p-6 text-gray-500">
+      <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-6 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
         <LoaderCircle className="animate-spin" size={20} />
         Loading profile...
       </div>
@@ -116,24 +129,22 @@ export default function EditProfileForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 rounded-xl border bg-white p-6 shadow-sm"
+      className="space-y-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
     >
+      {/* Heading */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
           Edit Profile
         </h2>
 
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Update your personal information.
         </p>
       </div>
 
       {/* Full Name */}
       <div className="space-y-2">
-        <label
-          htmlFor="name"
-          className="text-sm font-medium text-gray-700"
-        >
+        <label htmlFor="name" className={labelClasses}>
           Full Name
         </label>
 
@@ -146,38 +157,32 @@ export default function EditProfileForm() {
           placeholder="Enter your full name"
           maxLength={100}
           required
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+          className={inputClasses}
         />
       </div>
 
       {/* Email */}
       <div className="space-y-2">
-        <label
-          htmlFor="email"
-          className="text-sm font-medium text-gray-700"
-        >
+        <label htmlFor="email" className={labelClasses}>
           Email Address
         </label>
 
         <input
           id="email"
-          type="email"
+          type="text"
           value="Your registered email is available on the Profile page"
           readOnly
-          className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500"
+          className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500 outline-none dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-400"
         />
 
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           Email is managed by your authentication account.
         </p>
       </div>
 
       {/* Phone */}
       <div className="space-y-2">
-        <label
-          htmlFor="phone"
-          className="text-sm font-medium text-gray-700"
-        >
+        <label htmlFor="phone" className={labelClasses}>
           Phone Number
         </label>
 
@@ -189,16 +194,13 @@ export default function EditProfileForm() {
           onChange={handleChange}
           placeholder="Enter your phone number"
           maxLength={30}
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+          className={inputClasses}
         />
       </div>
 
       {/* Bio */}
       <div className="space-y-2">
-        <label
-          htmlFor="bio"
-          className="text-sm font-medium text-gray-700"
-        >
+        <label htmlFor="bio" className={labelClasses}>
           About Me
         </label>
 
@@ -210,20 +212,20 @@ export default function EditProfileForm() {
           placeholder="Tell us a little about yourself..."
           maxLength={500}
           rows={4}
-          className="w-full resize-y rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+          className={`${inputClasses} resize-y`}
         />
 
-        <p className="text-right text-xs text-gray-500">
+        <p className="text-right text-xs text-gray-500 dark:text-gray-400">
           {profile.bio.length}/500 characters
         </p>
       </div>
 
       {/* Save Button */}
-      <div className="flex justify-end border-t pt-5">
+      <div className="flex justify-end border-t border-gray-200 pt-5 dark:border-gray-800">
         <button
           type="submit"
           disabled={saving}
-          className="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-5 py-3 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-5 py-3 font-medium text-white transition hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:focus-visible:ring-offset-gray-900"
         >
           {saving ? (
             <LoaderCircle className="animate-spin" size={18} />

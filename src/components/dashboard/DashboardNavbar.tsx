@@ -283,26 +283,28 @@ export default function DashboardNavbar({
   // ======================================
 
   return (
-    <header className="relative z-30 flex h-16 min-w-0 shrink-0 items-center justify-between gap-2 border-b bg-white px-3 sm:px-6">
+    <header className="relative z-30 flex h-16 min-w-0 shrink-0 items-center justify-between gap-2 border-b border-gray-200 bg-white px-3 dark:border-gray-800 dark:bg-gray-900 sm:px-6">
+
       {/* Left side */}
       <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <button
           type="button"
           onClick={onMenuClick}
-          className="shrink-0 rounded-lg p-2 hover:bg-gray-100 lg:hidden"
+          className="shrink-0 rounded-lg p-2 text-gray-700 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 lg:hidden"
           aria-label="Open dashboard menu"
         >
           <Menu size={22} />
         </button>
 
-        <h2 className="truncate text-sm font-semibold text-gray-800 sm:text-base">
+        <h2 className="truncate text-sm font-semibold text-gray-800 dark:text-white sm:text-base">
           Dashboard
         </h2>
       </div>
 
       {/* Right side */}
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-        <span className="hidden text-sm text-gray-600 sm:block">
+
+        <span className="hidden text-sm text-gray-600 dark:text-gray-300 sm:block">
           {session?.user?.name || "User"}
         </span>
 
@@ -313,7 +315,7 @@ export default function DashboardNavbar({
             onClick={() =>
               setNotificationOpen((previous) => !previous)
             }
-            className="relative rounded-lg p-2 text-gray-600 transition hover:bg-gray-100"
+            className="relative rounded-lg p-2 text-gray-600 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
             aria-label="Notifications"
             aria-expanded={notificationOpen}
           >
@@ -336,21 +338,23 @@ export default function DashboardNavbar({
                 aria-label="Close notifications"
               />
 
-              <div className="fixed right-4 top-20 z-50 w-[calc(100vw-32px)] max-w-90 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl sm:absolute sm:right-0 sm:top-12 sm:w-90">
+              <div className="fixed right-4 top-20 z-50 w-[calc(100vw-32px)] max-w-90 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 sm:absolute sm:right-0 sm:top-12 sm:w-90">
+
                 {/* Dropdown header */}
-                <div className="flex min-w-0 items-center justify-between gap-2 border-b px-3 py-3 sm:px-4">
+                <div className="flex min-w-0 items-center justify-between gap-2 border-b border-gray-200 px-3 py-3 dark:border-gray-700 sm:px-4">
+
                   <div className="flex min-w-0 items-center gap-2">
                     <BellRing
                       size={18}
-                      className="shrink-0 text-gray-700"
+                      className="shrink-0 text-gray-700 dark:text-gray-300"
                     />
 
-                    <h3 className="whitespace-nowrap text-sm font-semibold text-gray-800">
+                    <h3 className="whitespace-nowrap text-sm font-semibold text-gray-800 dark:text-white">
                       Notifications
                     </h3>
 
                     {unreadCount > 0 && (
-                      <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">
+                      <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-950 dark:text-red-400">
                         {unreadCount} new
                       </span>
                     )}
@@ -360,7 +364,7 @@ export default function DashboardNavbar({
                     type="button"
                     onClick={handleMarkAllAsRead}
                     disabled={unreadCount === 0 || markingAll}
-                    className="flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-medium text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-medium text-blue-600 transition hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-blue-400 dark:hover:text-blue-300"
                   >
                     {markingAll ? (
                       <Loader2
@@ -377,26 +381,27 @@ export default function DashboardNavbar({
 
                 {/* Notification list */}
                 <div className="max-h-[65vh] overflow-y-auto sm:max-h-96">
+
                   {loadingNotifications &&
                   notifications.length === 0 ? (
                     <div className="flex justify-center py-10">
                       <Loader2
                         size={24}
-                        className="animate-spin text-gray-400"
+                        className="animate-spin text-gray-400 dark:text-gray-500"
                       />
                     </div>
                   ) : notifications.length === 0 ? (
                     <div className="px-4 py-10 text-center">
                       <Bell
                         size={30}
-                        className="mx-auto mb-2 text-gray-300"
+                        className="mx-auto mb-2 text-gray-300 dark:text-gray-600"
                       />
 
-                      <p className="text-sm font-medium text-gray-600">
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
                         No notifications yet
                       </p>
 
-                      <p className="mt-1 text-xs text-gray-400">
+                      <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
                         New booking updates will appear here.
                       </p>
                     </div>
@@ -409,31 +414,32 @@ export default function DashboardNavbar({
                           handleNotificationClick(notification)
                         }
                         disabled={markingId === notification._id}
-                        className={`w-full border-b px-3 py-3 text-left transition hover:bg-gray-50 disabled:cursor-wait sm:px-4 ${
+                        className={`w-full border-b border-gray-100 px-3 py-3 text-left transition hover:bg-gray-50 disabled:cursor-wait dark:border-gray-800 dark:hover:bg-gray-800 sm:px-4 ${
                           !notification.isRead
-                            ? "bg-blue-50/60"
-                            : ""
+                            ? "bg-blue-50/60 dark:bg-blue-950/30"
+                            : "bg-white dark:bg-gray-900"
                         }`}
                       >
                         <div className="flex min-w-0 items-start gap-3">
+
                           <span
                             className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
                               notification.isRead
-                                ? "bg-gray-300"
+                                ? "bg-gray-300 dark:bg-gray-600"
                                 : "bg-blue-500"
                             }`}
                           />
 
                           <div className="min-w-0 flex-1">
-                            <p className="wrap-anywhere text-sm font-semibold text-gray-800">
+                            <p className="wrap-anywhere text-sm font-semibold text-gray-800 dark:text-gray-100">
                               {notification.title}
                             </p>
 
-                            <p className="mt-1 wrap-anywhere text-xs leading-5 text-gray-600">
+                            <p className="mt-1 wrap-anywhere text-xs leading-5 text-gray-600 dark:text-gray-400">
                               {notification.message}
                             </p>
 
-                            <p className="mt-2 text-[11px] text-gray-400">
+                            <p className="mt-2 text-[11px] text-gray-400 dark:text-gray-500">
                               {formatDate(notification.createdAt)}
                             </p>
                           </div>
@@ -441,7 +447,7 @@ export default function DashboardNavbar({
                           {markingId === notification._id && (
                             <Loader2
                               size={16}
-                              className="shrink-0 animate-spin text-gray-400"
+                              className="shrink-0 animate-spin text-gray-400 dark:text-gray-500"
                             />
                           )}
                         </div>
@@ -451,14 +457,14 @@ export default function DashboardNavbar({
                 </div>
 
                 {/* Footer */}
-                <div className="border-t px-4 py-2 text-center">
+                <div className="border-t border-gray-200 px-4 py-2 text-center dark:border-gray-700">
                   <button
                     type="button"
                     onClick={() => {
                       setNotificationOpen(false);
                       router.push("/dashboard/owner-bookings");
                     }}
-                    className="text-xs font-medium text-blue-600 hover:text-blue-800"
+                    className="text-xs font-medium text-blue-600 transition hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                   >
                     View booking requests
                   </button>
@@ -472,7 +478,7 @@ export default function DashboardNavbar({
         <button
           type="button"
           onClick={handleLogout}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-red-50 px-2 py-2 text-sm font-medium text-red-600 hover:bg-red-100 sm:gap-2 sm:px-3"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-red-50 px-2 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/70 sm:gap-2 sm:px-3"
         >
           <LogOut size={17} />
           <span className="text-xs sm:text-sm">Logout</span>

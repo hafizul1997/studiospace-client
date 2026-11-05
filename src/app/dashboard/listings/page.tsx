@@ -62,6 +62,12 @@ const categories = [
   "Workshop",
 ];
 
+const inputClasses =
+  "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-green-500 dark:focus:ring-green-900/40";
+
+const labelClasses =
+  "mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300";
+
 export default function MyListingsPage() {
   const { data: session, isPending } = authClient.useSession();
 
@@ -136,22 +142,21 @@ export default function MyListingsPage() {
   );
 
   // Load listings when session is ready
-  // Load listings when session is ready
-useEffect(() => {
-  if (isPending || !userEmail) return;
+  useEffect(() => {
+    if (isPending || !userEmail) return;
 
-  const controller = new AbortController();
+    const controller = new AbortController();
 
-  const loadListings = async () => {
-    await fetchMyListings(controller.signal);
-  };
+    const loadListings = async () => {
+      await fetchMyListings(controller.signal);
+    };
 
-  void loadListings();
+    void loadListings();
 
-  return () => {
-    controller.abort();
-  };
-}, [isPending, userEmail, fetchMyListings]);
+    return () => {
+      controller.abort();
+    };
+  }, [isPending, userEmail, fetchMyListings]);
 
   // Search and category filter
   const filteredStudios = useMemo(() => {
@@ -332,7 +337,7 @@ useEffect(() => {
   // Session loading
   if (isPending) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="flex min-h-[50vh] items-center justify-center bg-gray-50 text-gray-600 dark:bg-gray-950 dark:text-gray-300">
         Checking your account...
       </div>
     );
@@ -341,12 +346,14 @@ useEffect(() => {
   // Login check
   if (!session?.user || !userEmail) {
     return (
-      <div className="p-8 text-center">
-        <h2 className="text-xl font-semibold">Please log in</h2>
+      <div className="bg-gray-50 p-8 text-center dark:bg-gray-950">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          Please log in
+        </h2>
 
         <Link
           href="/login"
-          className="mt-3 inline-block text-blue-600"
+          className="mt-3 inline-block text-blue-600 hover:underline dark:text-blue-400"
         >
           Go to Login
         </Link>
@@ -357,7 +364,7 @@ useEffect(() => {
   // Loading
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="flex min-h-[50vh] items-center justify-center bg-gray-50 text-gray-600 dark:bg-gray-950 dark:text-gray-300">
         Loading your listings...
       </div>
     );
@@ -366,15 +373,16 @@ useEffect(() => {
   // Fetch error
   if (loadError && studios.length === 0) {
     return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-red-600">{loadError}</p>
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 bg-gray-50 p-6 text-center dark:bg-gray-950">
+        <p className="text-red-600 dark:text-red-400">{loadError}</p>
 
         <button
+          type="button"
           onClick={() => {
             setLoading(true);
             fetchMyListings();
           }}
-          className="rounded-lg bg-black px-5 py-2.5 text-white hover:bg-gray-800"
+          className="rounded-lg bg-gray-900 px-5 py-2.5 text-white transition hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600"
         >
           Try Again
         </button>
@@ -383,22 +391,22 @@ useEffect(() => {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-8">
+    <div className="min-h-full space-y-6 bg-gray-50 p-4 dark:bg-gray-950 md:p-8">
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             My Listings
           </h1>
 
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Manage the studios you have added.
           </p>
         </div>
 
         <Link
           href="/add-studio"
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-green-700"
         >
           <Plus size={18} />
           Add New Studio
@@ -410,7 +418,8 @@ useEffect(() => {
         <div className="relative flex-1">
           <Search
             size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            aria-hidden="true"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
 
           <input
@@ -418,14 +427,16 @@ useEffect(() => {
             placeholder="Search by title, location or category..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 outline-none focus:border-black"
+            aria-label="Search studios"
+            className="w-full rounded-lg border border-gray-300 bg-white py-3 pl-10 pr-4 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-green-500 dark:focus:ring-green-900/40"
           />
         </div>
 
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-3 outline-none focus:border-black"
+          aria-label="Filter by category"
+          className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-green-500 dark:focus:ring-green-900/40"
         >
           <option value="All">All Categories</option>
 
@@ -437,20 +448,28 @@ useEffect(() => {
         </select>
       </div>
 
-      <p className="text-sm text-gray-500">
-        Showing {filteredStudios.length} of {studios.length} studios
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        Showing{" "}
+        <span className="font-semibold text-gray-900 dark:text-gray-200">
+          {filteredStudios.length}
+        </span>{" "}
+        of{" "}
+        <span className="font-semibold text-gray-900 dark:text-gray-200">
+          {studios.length}
+        </span>{" "}
+        studios
       </p>
 
       {/* Studio Cards */}
       {filteredStudios.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 py-16 text-center">
-          <h2 className="text-lg font-semibold text-gray-800">
+        <div className="rounded-xl border border-dashed border-gray-300 bg-white py-16 text-center dark:border-gray-700 dark:bg-gray-900">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
             {studios.length === 0
               ? "You haven't added any studios yet."
               : "No matching studios found."}
           </h2>
 
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
             {studios.length === 0
               ? "Add your first studio to get started."
               : "Try another search term or category."}
@@ -459,7 +478,7 @@ useEffect(() => {
           {studios.length === 0 && (
             <Link
               href="/add-studio"
-              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-black px-4 py-2 text-white"
+              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white transition hover:bg-green-700"
             >
               <Plus size={17} />
               Add Studio
@@ -471,9 +490,9 @@ useEffect(() => {
           {filteredStudios.map((studio) => (
             <div
               key={studio._id}
-              className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+              className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
             >
-              <div className="relative h-48 w-full bg-gray-100">
+              <div className="relative h-48 w-full bg-gray-100 dark:bg-gray-800">
                 {studio.imageUrl ? (
                   <Image
                     src={studio.imageUrl}
@@ -483,7 +502,7 @@ useEffect(() => {
                     className="object-cover"
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-gray-400">
+                  <div className="flex h-full items-center justify-center text-gray-400 dark:text-gray-500">
                     No Image
                   </div>
                 )}
@@ -491,40 +510,46 @@ useEffect(() => {
 
               <div className="space-y-3 p-4">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h2 className="font-semibold text-gray-900">
+                  <div className="min-w-0">
+                    <h2 className="font-semibold text-gray-900 dark:text-white">
                       {studio.title}
                     </h2>
 
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                       {studio.category}
                     </p>
                   </div>
 
-                  <span className="whitespace-nowrap rounded-md bg-gray-100 px-2 py-1 text-sm font-semibold">
+                  <span className="whitespace-nowrap rounded-md bg-gray-100 px-2 py-1 text-sm font-semibold text-gray-800 dark:bg-gray-800 dark:text-gray-200">
                     AED {studio.hourlyRate}/hr
                   </span>
                 </div>
 
-                <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400">
                   <span className="flex items-center gap-1">
-                    <MapPin size={15} />
+                    <MapPin
+                      size={15}
+                      className="shrink-0 text-green-600 dark:text-green-400"
+                    />
                     {studio.location}
                   </span>
 
                   <span className="flex items-center gap-1">
-                    <Users size={15} />
+                    <Users
+                      size={15}
+                      className="shrink-0 text-green-600 dark:text-green-400"
+                    />
                     {studio.maxCapacity} people
                   </span>
                 </div>
 
-                <p className="line-clamp-2 text-sm text-gray-600">
+                <p className="line-clamp-2 text-sm text-gray-600 dark:text-gray-300">
                   {studio.description}
                 </p>
 
                 <Link
                   href={`/studios/${studio._id}`}
-                  className="block rounded-lg border border-gray-300 py-2 text-center text-sm font-medium hover:bg-gray-50"
+                  className="block rounded-lg border border-gray-300 py-2 text-center text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                 >
                   View Details
                 </Link>
@@ -532,17 +557,19 @@ useEffect(() => {
                 {/* Edit and Delete Buttons */}
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <button
+                    type="button"
                     onClick={() => handleEdit(studio)}
-                    className="flex items-center justify-center gap-2 rounded-lg bg-blue-50 px-3 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-100"
+                    className="flex items-center justify-center gap-2 rounded-lg bg-blue-50 px-3 py-2.5 text-sm font-medium text-blue-700 transition hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-400 dark:hover:bg-blue-900/60"
                   >
                     <Pencil size={16} />
                     Edit
                   </button>
 
                   <button
+                    type="button"
                     onClick={() => handleDelete(studio)}
                     disabled={deletingId === studio._id}
-                    className="flex items-center justify-center gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex items-center justify-center gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-900/50"
                   >
                     <Trash2 size={16} />
                     {deletingId === studio._id
@@ -558,15 +585,23 @@ useEffect(() => {
 
       {/* Edit Studio Modal */}
       {editingStudio && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-studio-title"
+            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-gray-900 sm:p-6"
+          >
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2
+                  id="edit-studio-title"
+                  className="text-xl font-bold text-gray-900 dark:text-white"
+                >
                   Edit Studio
                 </h2>
 
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Update your studio information.
                 </p>
               </div>
@@ -575,7 +610,7 @@ useEffect(() => {
                 type="button"
                 onClick={() => setEditingStudio(null)}
                 disabled={saving}
-                className="rounded-full p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+                className="rounded-full p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
                 aria-label="Close edit form"
               >
                 <X size={20} />
@@ -584,29 +619,31 @@ useEffect(() => {
 
             <form onSubmit={handleUpdate} className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium">
+                <label htmlFor="edit-title" className={labelClasses}>
                   Studio Title
                 </label>
 
                 <input
+                  id="edit-title"
                   name="title"
                   value={editForm.title}
                   onChange={handleFormChange}
                   required
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-black"
+                  className={inputClasses}
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">
+                <label htmlFor="edit-category" className={labelClasses}>
                   Category
                 </label>
 
                 <select
+                  id="edit-category"
                   name="category"
                   value={editForm.category}
                   onChange={handleFormChange}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 outline-none focus:border-black"
+                  className={inputClasses}
                 >
                   {categories.map((item) => (
                     <option key={item} value={item}>
@@ -618,11 +655,12 @@ useEffect(() => {
 
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="mb-1 block text-sm font-medium">
+                  <label htmlFor="edit-hourlyRate" className={labelClasses}>
                     Hourly Rate (AED)
                   </label>
 
                   <input
+                    id="edit-hourlyRate"
                     type="number"
                     name="hourlyRate"
                     min="0.01"
@@ -630,16 +668,20 @@ useEffect(() => {
                     value={editForm.hourlyRate}
                     onChange={handleFormChange}
                     required
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5"
+                    className={inputClasses}
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium">
+                  <label
+                    htmlFor="edit-securityDeposit"
+                    className={labelClasses}
+                  >
                     Security Deposit
                   </label>
 
                   <input
+                    id="edit-securityDeposit"
                     type="number"
                     name="securityDeposit"
                     min="0"
@@ -647,16 +689,17 @@ useEffect(() => {
                     value={editForm.securityDeposit}
                     onChange={handleFormChange}
                     required
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5"
+                    className={inputClasses}
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium">
+                  <label htmlFor="edit-maxCapacity" className={labelClasses}>
                     Max Capacity
                   </label>
 
                   <input
+                    id="edit-maxCapacity"
                     type="number"
                     name="maxCapacity"
                     min="1"
@@ -664,59 +707,62 @@ useEffect(() => {
                     value={editForm.maxCapacity}
                     onChange={handleFormChange}
                     required
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5"
+                    className={inputClasses}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">
+                <label htmlFor="edit-location" className={labelClasses}>
                   Location
                 </label>
 
                 <input
+                  id="edit-location"
                   name="location"
                   value={editForm.location}
                   onChange={handleFormChange}
                   required
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5"
+                  className={inputClasses}
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">
+                <label htmlFor="edit-imageUrl" className={labelClasses}>
                   Image URL
                 </label>
 
                 <input
+                  id="edit-imageUrl"
                   type="url"
                   name="imageUrl"
                   value={editForm.imageUrl}
                   onChange={handleFormChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5"
+                  className={inputClasses}
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">
+                <label htmlFor="edit-description" className={labelClasses}>
                   Description
                 </label>
 
                 <textarea
+                  id="edit-description"
                   name="description"
                   value={editForm.description}
                   onChange={handleFormChange}
                   rows={4}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5"
+                  className={`${inputClasses} resize-y`}
                 />
               </div>
 
-              <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-end">
+              <div className="flex flex-col-reverse gap-3 border-t border-gray-200 pt-5 dark:border-gray-800 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={() => setEditingStudio(null)}
                   disabled={saving}
-                  className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+                  className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                   Cancel
                 </button>
@@ -724,7 +770,7 @@ useEffect(() => {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+                  className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving ? "Saving..." : "Save Changes"}
                 </button>

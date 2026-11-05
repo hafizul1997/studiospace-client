@@ -84,24 +84,20 @@ export default function MyBookingsPage() {
   );
 
   // Load bookings when session is ready
-  
-// Load bookings when session is ready
+  useEffect(() => {
+    if (isPending || !userEmail) return;
 
-useEffect(() => {
-  if (isPending || !userEmail) return;
+    const controller = new AbortController();
 
-  const controller = new AbortController();
+    const timer = setTimeout(() => {
+      void fetchMyBookings(controller.signal);
+    }, 0);
 
-  const timer = setTimeout(() => {
-    fetchMyBookings(controller.signal);
-  }, 0);
-
-  return () => {
-    clearTimeout(timer);
-    controller.abort();
-  };
-}, [isPending, userEmail, fetchMyBookings]);
-
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [isPending, userEmail, fetchMyBookings]);
 
   // Search and status filter
   const filteredBookings = useMemo(() => {
@@ -156,7 +152,6 @@ useEffect(() => {
         throw new Error(result.message || "Failed to cancel booking");
       }
 
-      // Update UI without refreshing
       setBookings((previous) =>
         (previous ?? []).map((item) =>
           item._id === booking._id
@@ -180,8 +175,11 @@ useEffect(() => {
   // Session loading
   if (isPending) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="animate-spin text-gray-500" size={30} />
+      <div className="flex min-h-[50vh] items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <Loader2
+          className="animate-spin text-gray-500 dark:text-gray-400"
+          size={30}
+        />
       </div>
     );
   }
@@ -189,10 +187,15 @@ useEffect(() => {
   // Login check
   if (!session?.user) {
     return (
-      <div className="p-8 text-center">
-        <h2 className="text-xl font-semibold">Please log in</h2>
+      <div className="bg-gray-50 p-8 text-center dark:bg-gray-950">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          Please log in
+        </h2>
 
-        <Link href="/login" className="mt-3 inline-block text-blue-600">
+        <Link
+          href="/login"
+          className="mt-3 inline-block text-blue-600 hover:underline dark:text-blue-400"
+        >
           Go to Login
         </Link>
       </div>
@@ -202,8 +205,11 @@ useEffect(() => {
   // Bookings loading
   if (bookings === null && !error) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="animate-spin text-gray-500" size={30} />
+      <div className="flex min-h-[50vh] items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <Loader2
+          className="animate-spin text-gray-500 dark:text-gray-400"
+          size={30}
+        />
       </div>
     );
   }
@@ -211,14 +217,18 @@ useEffect(() => {
   // API Error
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">
+      <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
         <h2 className="font-semibold">Unable to Load Your Bookings</h2>
 
         <p className="mt-2 text-sm">{error}</p>
 
         <button
-          onClick={() => fetchMyBookings()}
-          className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+          type="button"
+          onClick={() => {
+            setBookings(null);
+            void fetchMyBookings();
+          }}
+          className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
         >
           Try Again
         </button>
@@ -231,46 +241,54 @@ useEffect(() => {
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "Confirmed":
-        return "bg-green-100 text-green-700";
+        return "bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400";
       case "Cancelled":
-        return "bg-red-100 text-red-700";
+        return "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400";
       case "Rejected":
-        return "bg-gray-100 text-gray-700";
+        return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
       default:
-        return "bg-yellow-100 text-yellow-700";
+        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/50 dark:text-yellow-400";
     }
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-8">
+    <div className="min-h-full space-y-6 bg-gray-50 p-4 dark:bg-gray-950 md:p-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          My Bookings
+        </h1>
 
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           View and manage your studio booking requests.
         </p>
       </div>
 
       {/* Booking Summary */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border bg-white p-5">
-          <p className="text-sm text-gray-500">Total Bookings</p>
-          <h2 className="mt-2 text-2xl font-bold">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Total Bookings
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
             {currentBookings.length}
           </h2>
         </div>
 
-        <div className="rounded-xl border bg-white p-5">
-          <p className="text-sm text-gray-500">Pending</p>
-          <h2 className="mt-2 text-2xl font-bold text-yellow-600">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Pending
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-yellow-600 dark:text-yellow-400">
             {currentBookings.filter((b) => b.status === "Pending").length}
           </h2>
         </div>
 
-        <div className="rounded-xl border bg-white p-5">
-          <p className="text-sm text-gray-500">Confirmed</p>
-          <h2 className="mt-2 text-2xl font-bold text-green-600">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Confirmed
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-green-600 dark:text-green-400">
             {currentBookings.filter((b) => b.status === "Confirmed").length}
           </h2>
         </div>
@@ -281,7 +299,8 @@ useEffect(() => {
         <div className="relative flex-1">
           <Search
             size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            aria-hidden="true"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
 
           <input
@@ -289,14 +308,16 @@ useEffect(() => {
             placeholder="Search by studio name or date..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 outline-none focus:border-black"
+            aria-label="Search bookings"
+            className="w-full rounded-lg border border-gray-300 bg-white py-3 pl-10 pr-4 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-green-500 dark:focus:ring-green-900/40"
           />
         </div>
 
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-3 outline-none focus:border-black"
+          aria-label="Filter bookings by status"
+          className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-green-500 dark:focus:ring-green-900/40"
         >
           <option value="All">All Bookings</option>
           <option value="Pending">Pending</option>
@@ -306,22 +327,33 @@ useEffect(() => {
         </select>
       </div>
 
-      <p className="text-sm text-gray-500">
-        Showing {filteredBookings.length} of {currentBookings.length} bookings
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        Showing{" "}
+        <span className="font-semibold text-gray-900 dark:text-gray-200">
+          {filteredBookings.length}
+        </span>{" "}
+        of{" "}
+        <span className="font-semibold text-gray-900 dark:text-gray-200">
+          {currentBookings.length}
+        </span>{" "}
+        bookings
       </p>
 
       {/* Booking List */}
       {filteredBookings.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 py-16 text-center">
-          <CalendarDays size={40} className="mx-auto text-gray-400" />
+        <div className="rounded-xl border border-dashed border-gray-300 bg-white py-16 text-center dark:border-gray-700 dark:bg-gray-900">
+          <CalendarDays
+            size={40}
+            className="mx-auto text-gray-400 dark:text-gray-500"
+          />
 
-          <h2 className="mt-4 text-lg font-semibold text-gray-800">
+          <h2 className="mt-4 text-lg font-semibold text-gray-800 dark:text-gray-100">
             {currentBookings.length === 0
               ? "You haven't made any bookings yet."
               : "No matching bookings found."}
           </h2>
 
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
             {currentBookings.length === 0
               ? "Explore studios and make your first booking."
               : "Try another search or status filter."}
@@ -330,7 +362,7 @@ useEffect(() => {
           {currentBookings.length === 0 && (
             <Link
               href="/studios"
-              className="mt-5 inline-block rounded-lg bg-black px-5 py-2.5 text-white"
+              className="mt-5 inline-block rounded-lg bg-green-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-green-700"
             >
               Explore Studios
             </Link>
@@ -341,22 +373,22 @@ useEffect(() => {
           {filteredBookings.map((booking) => (
             <div
               key={booking._id}
-              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
             >
               {/* Booking Header */}
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
+                <div className="min-w-0">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {booking.studioTitle}
                   </h2>
 
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 break-all text-sm text-gray-500 dark:text-gray-400">
                     Booking ID: {booking._id}
                   </p>
                 </div>
 
                 <span
-                  className={`w-fit rounded-full px-3 py-1 text-sm font-medium ${getStatusStyle(
+                  className={`w-fit shrink-0 rounded-full px-3 py-1 text-sm font-medium ${getStatusStyle(
                     booking.status
                   )}`}
                 >
@@ -365,46 +397,66 @@ useEffect(() => {
               </div>
 
               {/* Booking Information */}
-              <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="mt-5 grid gap-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-800/60 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="flex items-center gap-3">
-                  <CalendarDays size={19} className="text-gray-400" />
+                  <CalendarDays
+                    size={19}
+                    className="shrink-0 text-green-600 dark:text-green-400"
+                  />
 
-                  <div>
-                    <p className="text-xs text-gray-500">Booking Date</p>
-                    <p className="text-sm font-medium">
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Booking Date
+                    </p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {booking.bookingDate}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <Clock size={19} className="text-gray-400" />
+                  <Clock
+                    size={19}
+                    className="shrink-0 text-green-600 dark:text-green-400"
+                  />
 
-                  <div>
-                    <p className="text-xs text-gray-500">Time</p>
-                    <p className="text-sm font-medium">
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Time
+                    </p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {booking.startTime} - {booking.endTime}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <Users size={19} className="text-gray-400" />
+                  <Users
+                    size={19}
+                    className="shrink-0 text-green-600 dark:text-green-400"
+                  />
 
                   <div>
-                    <p className="text-xs text-gray-500">Guests</p>
-                    <p className="text-sm font-medium">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Guests
+                    </p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {booking.guests} people
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <MapPin size={19} className="text-gray-400" />
+                  <MapPin
+                    size={19}
+                    className="shrink-0 text-green-600 dark:text-green-400"
+                  />
 
                   <div>
-                    <p className="text-xs text-gray-500">Duration</p>
-                    <p className="text-sm font-medium">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Duration
+                    </p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {booking.totalHours} hours
                     </p>
                   </div>
@@ -412,13 +464,13 @@ useEffect(() => {
               </div>
 
               {/* Price and Actions */}
-              <div className="mt-5 flex flex-col justify-between gap-4 border-t pt-4 sm:flex-row sm:items-center">
+              <div className="mt-5 flex flex-col justify-between gap-4 border-t border-gray-200 pt-4 dark:border-gray-800 sm:flex-row sm:items-center">
                 <div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Total Booking Price
                   </p>
 
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">
                     AED {Number(booking.totalPrice).toFixed(2)}
                   </p>
                 </div>
@@ -426,16 +478,17 @@ useEffect(() => {
                 <div className="flex flex-wrap gap-3">
                   <Link
                     href={`/studios/${booking.studioId}`}
-                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
+                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                   >
                     View Studio
                   </Link>
 
                   {booking.status === "Pending" && (
                     <button
+                      type="button"
                       onClick={() => handleCancelBooking(booking)}
                       disabled={cancellingId === booking._id}
-                      className="flex items-center gap-2 rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex items-center gap-2 rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-900/50"
                     >
                       {cancellingId === booking._id ? (
                         <Loader2 size={16} className="animate-spin" />
