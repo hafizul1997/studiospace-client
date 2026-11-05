@@ -12,8 +12,10 @@ import {
 } from "lucide-react";
 
 import type { Studio } from "@/app/Type/Studio";
+
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 export default function FeaturedStudios() {
   const [studios, setStudios] = useState<Studio[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +50,7 @@ export default function FeaturedStudios() {
 
   return (
     <section className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
+
       {/* Section Heading */}
       <div className="mb-10 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
@@ -55,11 +58,11 @@ export default function FeaturedStudios() {
             Discover Creative Spaces
           </p>
 
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
             Featured Studios
           </h2>
 
-          <p className="mt-3 max-w-xl text-gray-600">
+          <p className="mt-3 max-w-xl text-gray-600 dark:text-gray-400">
             Explore our latest creative studios and find the perfect
             space for your next project.
           </p>
@@ -67,7 +70,7 @@ export default function FeaturedStudios() {
 
         <Link
           href="/studios"
-          className="inline-flex items-center gap-2 font-semibold text-orange-600 transition hover:text-orange-700"
+          className="inline-flex items-center gap-2 font-semibold text-orange-600 transition hover:text-orange-700 dark:hover:text-orange-400"
         >
           Explore All Studios
           <ArrowRight size={18} />
@@ -80,13 +83,14 @@ export default function FeaturedStudios() {
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={index}
-              className="animate-pulse overflow-hidden rounded-2xl border border-gray-200"
+              className="animate-pulse overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
             >
-              <div className="h-56 bg-gray-200" />
+              <div className="h-56 bg-gray-200 dark:bg-gray-800" />
+
               <div className="space-y-3 p-5">
-                <div className="h-4 w-1/3 rounded bg-gray-200" />
-                <div className="h-6 w-3/4 rounded bg-gray-200" />
-                <div className="h-4 w-1/2 rounded bg-gray-200" />
+                <div className="h-4 w-1/3 rounded bg-gray-200 dark:bg-gray-800" />
+                <div className="h-6 w-3/4 rounded bg-gray-200 dark:bg-gray-800" />
+                <div className="h-4 w-1/2 rounded bg-gray-200 dark:bg-gray-800" />
               </div>
             </div>
           ))}
@@ -95,18 +99,19 @@ export default function FeaturedStudios() {
 
       {/* Error State */}
       {!loading && error && (
-        <div className="rounded-xl bg-red-50 p-6 text-center text-red-600">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-red-600 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
           {error}
         </div>
       )}
 
       {/* Empty State */}
       {!loading && !error && studios.length === 0 && (
-        <div className="rounded-xl border border-dashed border-gray-300 p-12 text-center">
-          <h3 className="text-xl font-semibold text-gray-800">
+        <div className="rounded-xl border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
             No Studios Available
           </h3>
-          <p className="mt-2 text-gray-500">
+
+          <p className="mt-2 text-gray-500 dark:text-gray-400">
             New creative spaces will appear here soon.
           </p>
         </div>
@@ -118,10 +123,10 @@ export default function FeaturedStudios() {
           {studios.slice(0, 6).map((studio) => (
             <div
               key={studio._id}
-              className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+              className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
             >
               {/* Image */}
-              <div className="relative h-56 overflow-hidden bg-gray-100">
+              <div className="relative h-56 overflow-hidden bg-gray-100 dark:bg-gray-800">
                 {studio.imageUrl ? (
                   <Image
                     src={studio.imageUrl}
@@ -131,31 +136,34 @@ export default function FeaturedStudios() {
                     className="object-cover transition duration-500 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-gray-400">
+                  <div className="flex h-full items-center justify-center text-sm text-gray-400 dark:text-gray-500">
                     No Image Available
                   </div>
                 )}
 
                 {/* Category Badge */}
-                <span className="absolute left-4 top-4 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 shadow">
+                <span className="absolute left-4 top-4 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 shadow dark:bg-gray-900 dark:text-gray-200">
                   {studio.category}
                 </span>
 
                 {/* Rating Badge */}
-                <span className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-gray-800 shadow">
-                  <Star size={14} className="fill-yellow-400 text-yellow-400" />
+                <span className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-gray-800 shadow dark:bg-gray-900 dark:text-gray-200">
+                  <Star
+                    size={14}
+                    className="fill-yellow-400 text-yellow-400"
+                  />
                   {studio.rating ?? "New"}
                 </span>
               </div>
 
               {/* Card Content */}
               <div className="p-5">
-                <h3 className="line-clamp-1 text-xl font-bold text-gray-900">
+                <h3 className="line-clamp-1 text-xl font-bold text-gray-900 dark:text-white">
                   {studio.title}
                 </h3>
 
                 {/* Location */}
-                <p className="mt-3 flex items-center gap-2 text-sm text-gray-500">
+                <p className="mt-3 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                   <MapPin size={16} className="shrink-0 text-orange-600" />
                   <span className="line-clamp-1">
                     {studio.location}
@@ -163,20 +171,21 @@ export default function FeaturedStudios() {
                 </p>
 
                 {/* Price and Duration */}
-                <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
+                <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
                   <div>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       Hourly Rate
                     </p>
-                    <p className="mt-1 text-xl font-bold text-gray-900">
+
+                    <p className="mt-1 text-xl font-bold text-gray-900 dark:text-white">
                       AED {studio.hourlyRate}
-                      <span className="text-sm font-normal text-gray-500">
+                      <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
                         {" "}/ hour
                       </span>
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                     <Clock size={14} />
                     Flexible Booking
                   </div>
@@ -185,7 +194,7 @@ export default function FeaturedStudios() {
                 {/* View Details */}
                 <Link
                   href={`/studios/${studio._id}`}
-                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
+                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
                 >
                   View Details
                   <ArrowRight size={16} />

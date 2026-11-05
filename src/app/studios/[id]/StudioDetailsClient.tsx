@@ -233,12 +233,12 @@ export default function StudioDetailsClient({
   // Invalid ID state
   if (!id) {
     return (
-      <div className="mx-auto flex min-h-[60vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
-        <h2 className="text-2xl font-bold text-gray-900">
+      <div className="flex min-h-[60vh] flex-col items-center justify-center bg-background px-4 text-center">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
           Invalid Studio ID
         </h2>
 
-        <p className="mt-2 text-gray-500">
+        <p className="mt-2 text-gray-500 dark:text-gray-400">
           The studio ID you provided is invalid.
         </p>
 
@@ -255,9 +255,10 @@ export default function StudioDetailsClient({
   // Loading state
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-3 text-gray-600">
+
+        <span className="ml-3 text-gray-600 dark:text-gray-300">
           Loading studio details...
         </span>
       </div>
@@ -267,12 +268,12 @@ export default function StudioDetailsClient({
   // Error state
   if (error || !studio) {
     return (
-      <div className="mx-auto flex min-h-[60vh] max-w-3xl flex-col items-center justify-center px-4 text-center">
-        <h2 className="text-2xl font-bold text-gray-900">
+      <div className="flex min-h-[60vh] flex-col items-center justify-center bg-background px-4 text-center">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
           {error || "Studio not found"}
         </h2>
 
-        <p className="mt-2 text-gray-500">
+        <p className="mt-2 text-gray-500 dark:text-gray-400">
           We could not find the studio you are looking for.
         </p>
 
@@ -287,18 +288,20 @@ export default function StudioDetailsClient({
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 py-8">
+    <main className="min-h-screen bg-gray-50 py-8 dark:bg-gray-950">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
+        {/* Back Button */}
         <Link
           href="/studios"
-          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-gray-600 transition hover:text-primary"
+          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-gray-600 transition hover:text-primary dark:text-gray-400 dark:hover:text-primary"
         >
           <ArrowLeft size={18} />
           Back to Studios
         </Link>
 
-        {/* Studio image */}
-        <div className="relative h-[/280px] overflow-hidden rounded-2xl bg-gray-200 sm:h-[/400px]">
+        {/* Studio Image */}
+        <div className="relative h-70 overflow-hidden rounded-2xl bg-gray-200 dark:bg-gray-800 sm:h-100">
           {studio.imageUrl ? (
             <div
               className="h-full w-full bg-cover bg-center"
@@ -309,15 +312,18 @@ export default function StudioDetailsClient({
               aria-label={studio.title}
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-gray-500">
+            <div className="flex h-full items-center justify-center text-gray-500 dark:text-gray-400">
               No studio image available
             </div>
           )}
         </div>
 
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
-          {/* Left side */}
+
+          {/* Left Side */}
           <section className="space-y-6 lg:col-span-2">
+
+            {/* Studio Title and Location */}
             <div>
               <div className="mb-3 flex flex-wrap items-center gap-3">
                 <span className="rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary">
@@ -325,7 +331,7 @@ export default function StudioDetailsClient({
                 </span>
 
                 {studio.rating !== undefined && (
-                  <span className="flex items-center gap-1 text-sm font-medium text-gray-600">
+                  <span className="flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-300">
                     <Star
                       size={16}
                       className="fill-yellow-400 text-yellow-400"
@@ -335,37 +341,44 @@ export default function StudioDetailsClient({
                 )}
               </div>
 
-              <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
                 {studio.title}
               </h1>
 
-              <p className="mt-3 flex items-center gap-2 text-gray-500">
-                <MapPin size={18} />
+              <p className="mt-3 flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                <MapPin size={18} className="shrink-0" />
                 {studio.location}
               </p>
             </div>
 
-            <div className="rounded-xl border bg-white p-6">
-              <h2 className="text-xl font-bold text-gray-900">
+            {/* About Studio */}
+            <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 About This Studio
               </h2>
 
-              <p className="mt-3 leading-7 text-gray-600">
+              <p className="mt-3 leading-7 text-gray-600 dark:text-gray-400">
                 {studio.description || "No description available."}
               </p>
             </div>
 
-            <div className="rounded-xl border bg-white p-6">
-              <h2 className="text-xl font-bold text-gray-900">
+            {/* Studio Information */}
+            <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 Studio Information
               </h2>
 
               <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+
                 <div className="flex items-center gap-3">
                   <Clock className="text-primary" size={22} />
+
                   <div>
-                    <p className="text-sm text-gray-500">Hourly Rate</p>
-                    <p className="font-semibold text-gray-900">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Hourly Rate
+                    </p>
+
+                    <p className="font-semibold text-gray-900 dark:text-white">
                       AED {studio.hourlyRate} / hour
                     </p>
                   </div>
@@ -373,22 +386,25 @@ export default function StudioDetailsClient({
 
                 <div className="flex items-center gap-3">
                   <Users className="text-primary" size={22} />
+
                   <div>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       Maximum Capacity
                     </p>
-                    <p className="font-semibold text-gray-900">
+
+                    <p className="font-semibold text-gray-900 dark:text-white">
                       {studio.maxCapacity} people
                     </p>
                   </div>
                 </div>
+
               </div>
             </div>
 
             {/* Amenities */}
             {studio.amenities && studio.amenities.length > 0 && (
-              <div className="rounded-xl border bg-white p-6">
-                <h2 className="text-xl font-bold text-gray-900">
+              <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   Amenities
                 </h2>
 
@@ -396,7 +412,7 @@ export default function StudioDetailsClient({
                   {studio.amenities.map((amenity, index) => (
                     <span
                       key={`${amenity}-${index}`}
-                      className="rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-700"
+                      className="rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-300"
                     >
                       {amenity}
                     </span>
@@ -406,38 +422,48 @@ export default function StudioDetailsClient({
             )}
           </section>
 
-          {/* Right side booking card */}
-          <aside className="h-fit rounded-2xl border bg-white p-6 shadow-sm lg:sticky lg:top-24">
-            <p className="text-sm text-gray-500">Starting from</p>
+          {/* Right Side Booking Card */}
+          <aside className="h-fit rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 lg:sticky lg:top-24">
+
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Starting from
+            </p>
 
             <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-gray-900">
+              <span className="text-3xl font-bold text-gray-900 dark:text-white">
                 AED {studio.hourlyRate}
               </span>
-              <span className="text-gray-500">/ hour</span>
+
+              <span className="text-gray-500 dark:text-gray-400">
+                / hour
+              </span>
             </div>
 
-            <div className="my-5 border-t" />
+            <div className="my-5 border-t border-gray-200 dark:border-gray-700" />
 
-            <div className="space-y-3 text-sm text-gray-600">
-              <div className="flex items-center justify-between">
+            <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+
+              <div className="flex items-center justify-between gap-3">
                 <span>Category</span>
-                <span className="font-medium text-gray-900">
+
+                <span className="font-medium text-gray-900 dark:text-white">
                   {studio.category}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <span>Maximum guests</span>
-                <span className="font-medium text-gray-900">
+
+                <span className="font-medium text-gray-900 dark:text-white">
                   {studio.maxCapacity}
                 </span>
               </div>
 
               {studio.securityDeposit !== undefined && (
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-3">
                   <span>Security deposit</span>
-                  <span className="font-medium text-gray-900">
+
+                  <span className="font-medium text-gray-900 dark:text-white">
                     AED {studio.securityDeposit}
                   </span>
                 </div>
@@ -452,7 +478,7 @@ export default function StudioDetailsClient({
               Book Now
             </button>
 
-            <p className="mt-3 text-center text-xs text-gray-500">
+            <p className="mt-3 text-center text-xs text-gray-500 dark:text-gray-400">
               Submit a booking request to reserve this studio.
             </p>
           </aside>
@@ -461,13 +487,14 @@ export default function StudioDetailsClient({
 
       {/* Booking Dialog */}
       <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[/520px]">
+        <DialogContent className="max-h-[90vh] overflow-y-auto border-gray-200 bg-white text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-white sm:max-w-130">
+
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">
+            <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white">
               Book This Studio
             </DialogTitle>
 
-            <DialogDescription>
+            <DialogDescription className="text-gray-600 dark:text-gray-400">
               Enter your details and choose your preferred booking date and
               time.
             </DialogDescription>
@@ -475,13 +502,14 @@ export default function StudioDetailsClient({
 
           {bookingSuccess ? (
             <div className="py-6 text-center">
-              <CheckCircle2 className="mx-auto h-14 w-14 text-green-600" />
 
-              <h3 className="mt-4 text-xl font-bold text-gray-900">
+              <CheckCircle2 className="mx-auto h-14 w-14 text-green-600 dark:text-green-400" />
+
+              <h3 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">
                 Booking Request Submitted!
               </h3>
 
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                 {bookingMessage}
               </p>
 
@@ -494,11 +522,15 @@ export default function StudioDetailsClient({
               </button>
             </div>
           ) : (
+
+            /* Booking Form */
             <form onSubmit={handleBooking} className="space-y-4">
+
+              {/* Full Name */}
               <div>
                 <label
                   htmlFor="customerName"
-                  className="mb-1.5 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
                   Full Name
                 </label>
@@ -510,14 +542,15 @@ export default function StudioDetailsClient({
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="Enter your full name"
                   required
-                  className="h-11 w-full rounded-lg border border-gray-300 px-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:placeholder:text-gray-500"
                 />
               </div>
 
+              {/* Email */}
               <div>
                 <label
                   htmlFor="customerEmail"
-                  className="mb-1.5 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
                   Email Address
                 </label>
@@ -529,14 +562,15 @@ export default function StudioDetailsClient({
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="Enter your email"
                   required
-                  className="h-11 w-full rounded-lg border border-gray-300 px-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:placeholder:text-gray-500"
                 />
               </div>
 
+              {/* Booking Date */}
               <div>
                 <label
                   htmlFor="bookingDate"
-                  className="mb-1.5 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
                   Booking Date
                 </label>
@@ -548,15 +582,17 @@ export default function StudioDetailsClient({
                   value={bookingDate}
                   onChange={(e) => setBookingDate(e.target.value)}
                   required
-                  className="h-11 w-full rounded-lg border border-gray-300 px-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-gray-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:scheme-dark"
                 />
               </div>
 
+              {/* Start Time and End Time */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
                 <div>
                   <label
                     htmlFor="startTime"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
                     Start Time
                   </label>
@@ -567,14 +603,14 @@ export default function StudioDetailsClient({
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
                     required
-                    className="h-11 w-full rounded-lg border border-gray-300 px-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-gray-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:scheme-dark"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor="endTime"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
                     End Time
                   </label>
@@ -585,15 +621,16 @@ export default function StudioDetailsClient({
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
                     required
-                    className="h-11 w-full rounded-lg border border-gray-300 px-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-gray-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:scheme-dark"
                   />
                 </div>
               </div>
 
+              {/* Number of Guests */}
               <div>
                 <label
                   htmlFor="guests"
-                  className="mb-1.5 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
                   Number of Guests
                 </label>
@@ -606,45 +643,49 @@ export default function StudioDetailsClient({
                   value={guests}
                   onChange={(e) => setGuests(e.target.value)}
                   required
-                  className="h-11 w-full rounded-lg border border-gray-300 px-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-gray-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                 />
 
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Maximum capacity: {studio.maxCapacity} guests
                 </p>
               </div>
 
+              {/* Price Calculation */}
               {totalHours > 0 && (
-                <div className="rounded-xl bg-gray-50 p-4">
-                  <div className="flex justify-between text-sm text-gray-600">
+                <div className="rounded-xl bg-gray-50 p-4 dark:bg-gray-800">
+
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                     <span>Duration</span>
                     <span>{totalHours} hour(s)</span>
                   </div>
 
-                  <div className="mt-2 flex justify-between text-sm text-gray-600">
+                  <div className="mt-2 flex justify-between text-sm text-gray-600 dark:text-gray-300">
                     <span>Hourly rate</span>
                     <span>AED {studio.hourlyRate}</span>
                   </div>
 
-                  <div className="mt-3 flex justify-between border-t pt-3 font-bold text-gray-900">
+                  <div className="mt-3 flex justify-between border-t border-gray-200 pt-3 font-bold text-gray-900 dark:border-gray-700 dark:text-white">
                     <span>Estimated total</span>
                     <span>AED {totalPrice.toFixed(2)}</span>
                   </div>
                 </div>
               )}
 
+              {/* Booking Message */}
               {bookingMessage && (
                 <div
                   className={`rounded-lg p-3 text-sm ${
                     bookingSuccess
-                      ? "bg-green-50 text-green-700"
-                      : "bg-red-50 text-red-700"
+                      ? "bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-400"
+                      : "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400"
                   }`}
                 >
                   {bookingMessage}
                 </div>
               )}
 
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={bookingLoading}

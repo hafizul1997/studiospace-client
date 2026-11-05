@@ -49,17 +49,18 @@ const categories = [
 export default function CategoryCards() {
   return (
     <section className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
+
       {/* Section Heading */}
       <div className="mb-10 text-center">
-        <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-green-600">
+        <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-green-600 dark:text-green-400">
           Explore by Category
         </p>
 
-        <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
           Find the Perfect Creative Space
         </h2>
 
-        <p className="mx-auto mt-3 max-w-2xl text-gray-600">
+        <p className="mx-auto mt-3 max-w-2xl text-gray-600 dark:text-gray-400">
           Explore different types of professional creative spaces
           for your next project.
         </p>
@@ -71,7 +72,7 @@ export default function CategoryCards() {
           <Link
             key={category.id}
             href={`/studios?category=${encodeURIComponent(category.category)}`}
-            className="group relative h-72 overflow-hidden rounded-2xl shadow-md"
+            className="group relative h-72 overflow-hidden rounded-2xl border border-gray-200 shadow-md transition duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-gray-800 dark:shadow-black/30"
           >
             {/* Background Image */}
             <Image
@@ -84,7 +85,7 @@ export default function CategoryCards() {
             />
 
             {/* Dark Overlay */}
-            <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent transition duration-300 group-hover:from-black/90" />
 
             {/* Card Content */}
             <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-6">
@@ -98,7 +99,8 @@ export default function CategoryCards() {
                 </p>
               </div>
 
-              <div className="ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-gray-900 transition group-hover:bg-green-600 group-hover:text-white">
+              {/* Arrow Button */}
+              <div className="ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-gray-900 transition duration-300 group-hover:bg-green-600 group-hover:text-white">
                 <ArrowUpRight size={20} />
               </div>
             </div>
