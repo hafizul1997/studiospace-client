@@ -28,21 +28,17 @@ const availableAmenities = [
 export default function AddStudioPage() {
   const router = useRouter();
 
-  // Authentication
   const { data: session, isPending } = authClient.useSession();
 
-  // Form states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
-  // Protect Add Studio page
   useEffect(() => {
     if (!isPending && !session?.user) {
       router.replace("/login");
     }
   }, [isPending, session, router]);
 
-  // Handle amenity selection
   const handleAmenityChange = (amenity: string) => {
     setSelectedAmenities((previous) =>
       previous.includes(amenity)
@@ -51,7 +47,6 @@ export default function AddStudioPage() {
     );
   };
 
-  // Handle form submission
   const handleSubmit = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
@@ -77,14 +72,7 @@ export default function AddStudioPage() {
     const imageUrl = String(formData.get("imageUrl") ?? "").trim();
     const description = String(formData.get("description") ?? "").trim();
 
-    // Frontend validation
-    if (
-      !title ||
-      !category ||
-      !location ||
-      !imageUrl ||
-      !description
-    ) {
+    if (!title || !category || !location || !imageUrl || !description) {
       toast.error("Please fill in all required fields.");
       return;
     }
@@ -152,18 +140,13 @@ export default function AddStudioPage() {
     }
 
     if (description.length < 20 || description.length > 3000) {
-      toast.error(
-        "Description must contain 20 to 3000 characters."
-      );
+      toast.error("Description must contain 20 to 3000 characters.");
       return;
     }
 
     try {
       setIsSubmitting(true);
 
-      // Send only fields accepted by the backend.
-      // Owner information is assigned by the backend
-      // using the authenticated session.
       const studioData = {
         title,
         category,
@@ -176,7 +159,6 @@ export default function AddStudioPage() {
         description,
       };
 
-      // Same-origin Next.js proxy request
       const response = await fetch("/api/backend/studios", {
         method: "POST",
         credentials: "same-origin",
@@ -215,22 +197,29 @@ export default function AddStudioPage() {
     }
   };
 
-  // Authentication loading
+  const inputClasses =
+    "w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-orange-500 dark:focus:ring-orange-900/40";
+
+  const labelClasses =
+    "mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300";
+
+  const sectionHeadingClasses =
+    "mb-5 border-b border-gray-100 pb-3 text-xl font-semibold text-gray-900 dark:border-gray-700 dark:text-white";
+
   if (isPending) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <p className="text-gray-600">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <p className="text-gray-600 dark:text-gray-300">
           Checking authentication...
         </p>
       </div>
     );
   }
 
-  // Redirect if user is not logged in
   if (!session?.user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <p className="text-gray-600">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <p className="text-gray-600 dark:text-gray-300">
           Redirecting to login...
         </p>
       </div>
@@ -238,20 +227,19 @@ export default function AddStudioPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-gray-50 px-4 py-10 dark:bg-gray-950 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
-
         {/* Page Heading */}
         <div className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-widest text-orange-600">
+          <p className="text-sm font-semibold uppercase tracking-widest text-orange-600 dark:text-orange-400">
             Host Your Space
           </p>
 
-          <h1 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl">
+          <h1 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
             Add a New Studio
           </h1>
 
-          <p className="mt-3 text-gray-600">
+          <p className="mt-3 text-gray-600 dark:text-gray-400">
             Share your creative space with photographers, filmmakers,
             podcasters, and other creators.
           </p>
@@ -260,23 +248,17 @@ export default function AddStudioPage() {
         {/* Studio Form */}
         <form
           onSubmit={handleSubmit}
-          className="space-y-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8"
+          className="space-y-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-8"
         >
-
           {/* Basic Information */}
           <section>
-            <h2 className="mb-5 border-b border-gray-100 pb-3 text-xl font-semibold text-gray-900">
+            <h2 className={sectionHeadingClasses}>
               Basic Information
             </h2>
 
             <div className="grid gap-5 sm:grid-cols-2">
-
-              {/* Studio Title */}
               <div className="sm:col-span-2">
-                <label
-                  htmlFor="title"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="title" className={labelClasses}>
                   Studio Title *
                 </label>
 
@@ -287,16 +269,12 @@ export default function AddStudioPage() {
                   maxLength={120}
                   placeholder="e.g. Creative Photography Studio"
                   required
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                  className={inputClasses}
                 />
               </div>
 
-              {/* Category */}
               <div>
-                <label
-                  htmlFor="category"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="category" className={labelClasses}>
                   Studio Category *
                 </label>
 
@@ -305,7 +283,7 @@ export default function AddStudioPage() {
                   name="category"
                   required
                   defaultValue=""
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                  className={inputClasses}
                 >
                   <option value="" disabled>
                     Select a category
@@ -319,12 +297,8 @@ export default function AddStudioPage() {
                 </select>
               </div>
 
-              {/* Max Capacity */}
               <div>
-                <label
-                  htmlFor="maxCapacity"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="maxCapacity" className={labelClasses}>
                   Maximum Capacity *
                 </label>
 
@@ -337,7 +311,7 @@ export default function AddStudioPage() {
                   step="1"
                   placeholder="e.g. 10"
                   required
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                  className={inputClasses}
                 />
               </div>
             </div>
@@ -345,16 +319,13 @@ export default function AddStudioPage() {
 
           {/* Pricing */}
           <section>
-            <h2 className="mb-5 border-b border-gray-100 pb-3 text-xl font-semibold text-gray-900">
+            <h2 className={sectionHeadingClasses}>
               Pricing & Deposit
             </h2>
 
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
-                <label
-                  htmlFor="hourlyRate"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="hourlyRate" className={labelClasses}>
                   Hourly Rate (AED) *
                 </label>
 
@@ -367,14 +338,14 @@ export default function AddStudioPage() {
                   step="0.01"
                   placeholder="e.g. 150"
                   required
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                  className={inputClasses}
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="securityDeposit"
-                  className="mb-2 block text-sm font-medium text-gray-700"
+                  className={labelClasses}
                 >
                   Security Deposit (AED) *
                 </label>
@@ -388,7 +359,7 @@ export default function AddStudioPage() {
                   step="0.01"
                   placeholder="e.g. 300"
                   required
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                  className={inputClasses}
                 />
               </div>
             </div>
@@ -396,15 +367,10 @@ export default function AddStudioPage() {
 
           {/* Location */}
           <section>
-            <h2 className="mb-5 border-b border-gray-100 pb-3 text-xl font-semibold text-gray-900">
-              Location
-            </h2>
+            <h2 className={sectionHeadingClasses}>Location</h2>
 
             <div>
-              <label
-                htmlFor="location"
-                className="mb-2 block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="location" className={labelClasses}>
                 Studio Address *
               </label>
 
@@ -415,22 +381,17 @@ export default function AddStudioPage() {
                 maxLength={200}
                 placeholder="e.g. Al Mizhar, Dubai, UAE"
                 required
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                className={inputClasses}
               />
             </div>
           </section>
 
           {/* Image */}
           <section>
-            <h2 className="mb-5 border-b border-gray-100 pb-3 text-xl font-semibold text-gray-900">
-              Studio Image
-            </h2>
+            <h2 className={sectionHeadingClasses}>Studio Image</h2>
 
             <div>
-              <label
-                htmlFor="imageUrl"
-                className="mb-2 block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="imageUrl" className={labelClasses}>
                 Image URL *
               </label>
 
@@ -441,10 +402,10 @@ export default function AddStudioPage() {
                 maxLength={2048}
                 placeholder="https://example.com/studio-image.jpg"
                 required
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                className={inputClasses}
               />
 
-              <p className="mt-2 text-xs text-gray-500">
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                 Enter an image URL. We will add image-hosting integration
                 in a later step.
               </p>
@@ -453,11 +414,11 @@ export default function AddStudioPage() {
 
           {/* Amenities */}
           <section>
-            <h2 className="mb-2 text-xl font-semibold text-gray-900">
+            <h2 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
               Amenities
             </h2>
 
-            <p className="mb-5 text-sm text-gray-500">
+            <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
               Select all facilities available in your studio.
             </p>
 
@@ -465,7 +426,7 @@ export default function AddStudioPage() {
               {availableAmenities.map((amenity) => (
                 <label
                   key={amenity}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-3 transition hover:border-orange-300 hover:bg-orange-50"
+                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-3 transition hover:border-orange-300 hover:bg-orange-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-orange-700 dark:hover:bg-orange-950/30"
                 >
                   <input
                     type="checkbox"
@@ -474,7 +435,7 @@ export default function AddStudioPage() {
                     className="h-4 w-4 accent-orange-600"
                   />
 
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
                     {amenity}
                   </span>
                 </label>
@@ -484,15 +445,12 @@ export default function AddStudioPage() {
 
           {/* Description */}
           <section>
-            <h2 className="mb-5 border-b border-gray-100 pb-3 text-xl font-semibold text-gray-900">
+            <h2 className={sectionHeadingClasses}>
               Studio Overview
             </h2>
 
             <div>
-              <label
-                htmlFor="description"
-                className="mb-2 block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="description" className={labelClasses}>
                 Detailed Description *
               </label>
 
@@ -504,23 +462,20 @@ export default function AddStudioPage() {
                 maxLength={3000}
                 placeholder="Describe your studio, equipment, facilities, and what makes it special..."
                 required
-                className="w-full resize-y rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                className={`${inputClasses} resize-y`}
               />
             </div>
           </section>
 
           {/* Host Information */}
           <section>
-            <h2 className="mb-5 border-b border-gray-100 pb-3 text-xl font-semibold text-gray-900">
+            <h2 className={sectionHeadingClasses}>
               Host Information
             </h2>
 
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
-                <label
-                  htmlFor="ownerName"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="ownerName" className={labelClasses}>
                   Host Name
                 </label>
 
@@ -529,15 +484,12 @@ export default function AddStudioPage() {
                   type="text"
                   value={session.user.name || ""}
                   readOnly
-                  className="w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-3"
+                  className="w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-3 text-gray-600 outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="ownerEmail"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="ownerEmail" className={labelClasses}>
                   Host Email
                 </label>
 
@@ -546,12 +498,12 @@ export default function AddStudioPage() {
                   type="email"
                   value={session.user.email}
                   readOnly
-                  className="w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-3"
+                  className="w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-3 text-gray-600 outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
                 />
               </div>
             </div>
 
-            <p className="mt-3 text-xs text-gray-500">
+            <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
               Your host information is automatically taken from your account.
             </p>
           </section>
@@ -564,7 +516,6 @@ export default function AddStudioPage() {
           >
             {isSubmitting ? "Adding Studio..." : "Add Studio"}
           </button>
-
         </form>
       </div>
     </main>
