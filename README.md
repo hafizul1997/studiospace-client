@@ -83,7 +83,12 @@ Make sure you have installed:
 
 ### 1. Clone the Repositories
 
-Clone the client and server repositories separately.
+# Clone Client
+git clone https://github.com/hafizul1997/studiospace-client.git
+
+# Clone Server
+git clone https://github.com/hafizul1997/studiospace-server.git
+
 
 ```bash
 git clone YOUR_CLIENT_GITHUB_REPOSITORY_URL
