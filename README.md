@@ -198,6 +198,23 @@ Use the following credentials to test the application:
 - Backend deployed on Render.
 - Database hosted on MongoDB Atlas.
 
+
+## 📸 Project Screenshots
+
+### 1. Home Page
+![StudioSpace Home Page](public/screenshots/home.png)
+
+### 2. Explore Studios
+![Explore Studios](public/screenshots/explore-studios.png)
+
+### 3. Studio Details
+![Studio Details](public/screenshots/studio-details.png)
+
+### 4. Dashboard
+![StudioSpace Dashboard](public/screenshots/dashboard.png)
+
+
+
 ## 👨‍💻 Developer
 
 **Project Name:** StudioSpace  
