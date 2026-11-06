@@ -199,19 +199,20 @@ Use the following credentials to test the application:
 - Database hosted on MongoDB Atlas.
 
 
+
 ## 📸 Project Screenshots
 
 ### 1. Home Page
-![StudioSpace Home Page](public/screenshots/home.png)
+![StudioSpace Home Page](public/screenshots/home.jpeg)
 
 ### 2. Explore Studios
-![Explore Studios](public/screenshots/explore-studios.png)
+![Explore Studios](public/screenshots/explore-studios.jpeg)
 
 ### 3. Studio Details
-![Studio Details](public/screenshots/studio-details.png)
+![Studio Details](public/screenshots/studio-details.jpeg)
 
 ### 4. Dashboard
-![StudioSpace Dashboard](public/screenshots/dashboard.png)
+![StudioSpace Dashboard](public/screenshots/dashboard.jpeg)
 
 
 
